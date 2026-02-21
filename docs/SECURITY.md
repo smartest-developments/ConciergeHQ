@@ -9,10 +9,12 @@
 - Fastify routes validate payloads with Zod.
 - Category and country inputs are strict allow-lists.
 - Fee amount is computed server-side only.
-- Planned rate limits:
-  - `POST /api/requests`: 10 requests / 10 minutes per IP.
-  - `POST /api/requests/:id/mock-pay`: 20 requests / 10 minutes per IP.
-  - Global cap for unauthenticated routes.
+- Rate limits (per IP):
+- `POST /api/requests`: 10 requests / 10 minutes.
+- `POST /api/requests/:id/checkout`: 20 requests / 10 minutes.
+- `POST /api/requests/:id/confirm-payment`: 20 requests / 10 minutes.
+- `POST /api/requests/:id/proposals`: 20 requests / 10 minutes.
+- Planned: global cap for unauthenticated routes.
 
 ## Data protection
 - Store only required user data (email, optional name).

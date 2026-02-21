@@ -55,6 +55,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: Legal copy appears in all user-facing fee/proposal touchpoints.
   Evidence: `docs/LEGAL_BOUNDARIES.md`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/PaymentSuccessPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`
+- id: ACQ-RISK-002
+  priority: P0
+  status: DONE
+  DoD: Abuse prevention implemented with concrete rate limiting.
+  Evidence: `apps/api/src/lib/rateLimit.ts`, `apps/api/src/routes/requests.ts`, `docs/SECURITY.md`
 
 ## AUTO_DISCOVERED
 - id: ACQ-AUTO-001
@@ -97,6 +102,16 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Surface proposal details (merchant + external URL) on the dashboard when status is PROPOSAL_PUBLISHED.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
+- id: ACQ-AUTO-009
+  priority: P2
+  status: TODO
+  DoD: Make rate limit thresholds configurable via env for production tuning.
+  Evidence: `.env.example`, `apps/api/src/lib/rateLimit.ts`
+- id: ACQ-AUTO-010
+  priority: P2
+  status: TODO
+  DoD: Document 429 response shapes and retry headers in API spec.
+  Evidence: `docs/API_SPEC.md`
 
 ## TECH_DEBT
 - id: ACQ-DEBT-001
@@ -111,11 +126,6 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/server.ts`
 
 ## RISK_ITEMS
-- id: ACQ-RISK-002
-  priority: P1
-  status: TODO
-  DoD: Abuse prevention implemented with concrete rate limiting.
-  Evidence: `docs/SECURITY.md`
 
 ## PARKED
 - id: ACQ-PARK-001

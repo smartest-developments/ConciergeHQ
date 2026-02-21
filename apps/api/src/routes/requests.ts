@@ -1,8 +1,9 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { RequestStatus } from '@prisma/client';
 import { z } from 'zod';
 import { allowedCategories, allowedCountries } from '../domain/constants.js';
 import { calculateSourcingFeeChf } from '../domain/fee.js';
+import { createIpRateLimiter } from '../lib/rateLimit.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
 
 const createRequestSchema = z.object({
@@ -34,7 +35,43 @@ const publishProposalSchema = z.object({
 });
 
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/requests', async (req, reply) => {
+  const requestLimiter = createIpRateLimiter({
+    windowMs: 10 * 60 * 1000,
+    maxRequests: 10,
+    keyPrefix: 'requests:create'
+  });
+  const paymentLimiter = createIpRateLimiter({
+    windowMs: 10 * 60 * 1000,
+    maxRequests: 20,
+    keyPrefix: 'requests:payment'
+  });
+  const proposalLimiter = createIpRateLimiter({
+    windowMs: 10 * 60 * 1000,
+    maxRequests: 20,
+    keyPrefix: 'requests:proposal'
+  });
+
+  const enforceRateLimit = (
+    limiter: ReturnType<typeof createIpRateLimiter>,
+    req: FastifyRequest,
+    reply: FastifyReply
+  ) => {
+    const result = limiter.check(req);
+    if (!result.allowed) {
+      const retryAfterSeconds = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
+      return reply
+        .header('Retry-After', retryAfterSeconds)
+        .status(429)
+        .send({ error: 'RATE_LIMITED' });
+    }
+  };
+
+  app.post(
+    '/api/requests',
+    {
+      preHandler: (req, reply) => enforceRateLimit(requestLimiter, req, reply)
+    },
+    async (req, reply) => {
     const parsed = createRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -84,7 +121,8 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       sourcingFeeChf: Number(request.sourcingFeeChf),
       createdAt: request.createdAt
     });
-  });
+    }
+  );
 
   app.get('/api/requests', async (req, reply) => {
     const parsed = listRequestsQuerySchema.safeParse(req.query);
@@ -120,7 +158,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     };
   });
 
-  app.post('/api/requests/:id/checkout', async (req, reply) => {
+  app.post(
+    '/api/requests/:id/checkout',
+    {
+      preHandler: (req, reply) => enforceRateLimit(paymentLimiter, req, reply)
+    },
+    async (req, reply) => {
     const parsed = requestParamsSchema.safeParse(req.params);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -184,9 +227,15 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       checkoutUrl: session.url,
       sessionId: session.id
     };
-  });
+    }
+  );
 
-  app.post('/api/requests/:id/confirm-payment', async (req, reply) => {
+  app.post(
+    '/api/requests/:id/confirm-payment',
+    {
+      preHandler: (req, reply) => enforceRateLimit(paymentLimiter, req, reply)
+    },
+    async (req, reply) => {
     const parsedParams = requestParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
       return reply.status(400).send({
@@ -278,9 +327,15 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       status: updated.status,
       feePaidAt: updated.feePaidAt
     };
-  });
+    }
+  );
 
-  app.post('/api/requests/:id/proposals', async (req, reply) => {
+  app.post(
+    '/api/requests/:id/proposals',
+    {
+      preHandler: (req, reply) => enforceRateLimit(proposalLimiter, req, reply)
+    },
+    async (req, reply) => {
     const parsedParams = requestParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
       return reply.status(400).send({
@@ -358,5 +413,6 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         expiresAt: result.proposal.expiresAt
       }
     };
-  });
+    }
+  );
 }
