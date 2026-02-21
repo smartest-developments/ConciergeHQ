@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequestCategory {
+  ELECTRONICS
+  HOME_APPLIANCES
+  SPORTS_EQUIPMENT
+}
+
+enum ItemCondition {
+  NEW
+  USED
+}
+
+enum RequestUrgency {
+  STANDARD
+  FAST
+  CRITICAL
+}
+
+enum RequestStatus {
+  FEE_PENDING
+  FEE_PAID
+  SOURCING
+  PROPOSAL_PUBLISHED
+  PROPOSAL_EXPIRED
+  COMPLETED
+  CANCELED
+}
+
+enum RequestCountry {
+  AT
+  BE
+  BG
+  CH
+  CY
+  CZ
+  DE
+  DK
+  EE
+  ES
+  FI
+  FR
+  GR
+  HR
+  HU
+  IE
+  IT
+  LT
+  LU
+  LV
+  MT
+  NL
+  PL
+  PT
+  RO
+  SE
+  SI
+  SK
+}
+
+model User {
+  id        Int              @id @default(autoincrement())
+  email     String           @unique
+  name      String?
+  requests  SourcingRequest[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model SourcingRequest {
+  id              Int                  @id @default(autoincrement())
+  userId          Int
+  user            User                 @relation(fields: [userId], references: [id])
+  budgetChf       Decimal              @db.Decimal(10, 2)
+  specs           String
+  category        RequestCategory
+  condition       ItemCondition
+  country         RequestCountry
+  urgency         RequestUrgency
+  sourcingFeeChf  Decimal              @db.Decimal(10, 2)
+  status          RequestStatus
+  feePaidAt       DateTime?
+  proposals       Proposal[]
+  statusEvents    RequestStatusEvent[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model Proposal {
+  id          Int             @id @default(autoincrement())
+  requestId   Int
+  request     SourcingRequest @relation(fields: [requestId], references: [id])
+  merchantName String
+  externalUrl String
+  summary     String?
+  publishedAt DateTime
+  expiresAt   DateTime
+  actedAt     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model RequestStatusEvent {
+  id          Int             @id @default(autoincrement())
+  requestId   Int
+  request     SourcingRequest @relation(fields: [requestId], references: [id])
+  fromStatus  RequestStatus?
+  toStatus    RequestStatus
+  reason      String?
+  metadata    Json?
+  occurredAt  DateTime        @default(now())
+}

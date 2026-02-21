@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log*
+.DS_Store
+.env
+.env.local
+coverage
+dist
+apps/web/dist
+apps/api/dist
+apps/api/node_modules/.prisma

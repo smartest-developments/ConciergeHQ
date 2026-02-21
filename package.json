@@ -1,0 +1,24 @@
+{
+  "name": "conciergehq",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "postinstall": "npm --workspace apps/api run prisma:generate",
+    "dev": "concurrently \"npm --workspace apps/api run dev\" \"npm --workspace apps/web run dev\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:up": "docker compose up -d db",
+    "db:reset": "npm run db:up && npm --workspace apps/api run prisma:migrate:reset",
+    "e2e": "echo \"Playwright foundation is in /e2e. Add browser tests when flows stabilize.\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.7.3"
+  }
+}
