@@ -31,14 +31,29 @@ export async function createRequest(payload: CreateRequestInput) {
   return response.json() as Promise<{ id: number; status: string; sourcingFeeChf: number }>;
 }
 
-export async function markFeePaid(requestId: number) {
-  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/mock-pay`, {
+export async function createCheckoutSession(requestId: number) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/checkout`, {
     method: 'POST'
   });
 
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => ({}));
-    throw new Error(errorPayload.error ?? 'Failed to mark fee as paid');
+    throw new Error(errorPayload.error ?? 'Failed to create checkout session');
+  }
+
+  return response.json() as Promise<{ checkoutUrl: string; sessionId: string }>;
+}
+
+export async function confirmPayment(requestId: number, sessionId: string) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/confirm-payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId })
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to confirm payment');
   }
 
   return response.json() as Promise<{ id: number; status: string; feePaidAt: string }>;

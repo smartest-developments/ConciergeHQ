@@ -1,27 +1,29 @@
 import { useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { markFeePaid } from '../api';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { createCheckoutSession } from '../api';
 
 export function PaymentPage() {
-  const navigate = useNavigate();
   const { requestId } = useParams<{ requestId: string }>();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fee = searchParams.get('fee') ?? '0';
+  const cancelled = searchParams.get('cancelled') === 'true';
   const parsedRequestId = Number(requestId);
 
-  async function markPaid() {
+  async function beginCheckout() {
     setError(null);
     setLoading(true);
 
     try {
-      await markFeePaid(parsedRequestId);
-      const email = localStorage.getItem('acq_user_email');
-      navigate(`/dashboard${email ? `?email=${encodeURIComponent(email)}` : ''}`);
+      const session = await createCheckoutSession(parsedRequestId);
+      if (!session.checkoutUrl) {
+        throw new Error('Payment provider returned no checkout URL');
+      }
+      window.location.assign(session.checkoutUrl);
     } catch (paymentError) {
-      setError(paymentError instanceof Error ? paymentError.message : 'Unable to update payment state');
+      setError(paymentError instanceof Error ? paymentError.message : 'Unable to start payment');
     } finally {
       setLoading(false);
     }
@@ -29,20 +31,18 @@ export function PaymentPage() {
 
   return (
     <section className="card">
-      <h2>Sourcing Fee Placeholder</h2>
+      <h2>Sourcing Fee Checkout</h2>
       <p>Request #{requestId}</p>
       <p>
         Fee due: <strong>{fee} CHF</strong>
       </p>
-      <p>
-        This is a mock step for v1 bootstrap. No real payment processing is implemented in this flow.
-      </p>
+      {cancelled ? <p className="warning">Payment was cancelled. You can try again below.</p> : null}
       <p className="warning">
         Fee is non-refundable and pays for research work only. Product purchase happens on the external merchant site.
       </p>
       {error ? <p className="error">{error}</p> : null}
-      <button type="button" disabled={loading || !Number.isInteger(parsedRequestId)} onClick={markPaid}>
-        {loading ? 'Updating...' : 'Mark Sourcing Fee as Paid'}
+      <button type="button" disabled={loading || !Number.isInteger(parsedRequestId)} onClick={beginCheckout}>
+        {loading ? 'Redirecting...' : 'Pay Sourcing Fee'}
       </button>
     </section>
   );

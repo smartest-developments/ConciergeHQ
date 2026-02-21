@@ -84,8 +84,26 @@ Example response:
 }
 ```
 
-## POST /api/requests/:id/mock-pay
-Bootstrap-only endpoint to simulate sourcing fee payment.
+## POST /api/requests/:id/checkout
+Create a PSP (Stripe Checkout) session for the sourcing fee.
+
+Example response:
+```json
+{
+  "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_test_123",
+  "sessionId": "cs_test_123"
+}
+```
+
+## POST /api/requests/:id/confirm-payment
+Confirm the PSP payment after returning from Checkout.
+
+Example request:
+```json
+{
+  "sessionId": "cs_test_123"
+}
+```
 
 Example response:
 ```json

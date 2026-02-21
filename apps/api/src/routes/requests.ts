@@ -3,6 +3,7 @@ import { RequestStatus } from '@prisma/client';
 import { z } from 'zod';
 import { allowedCategories, allowedCountries } from '../domain/constants.js';
 import { calculateSourcingFeeChf } from '../domain/fee.js';
+import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
 
 const createRequestSchema = z.object({
   userEmail: z.string().email(),
@@ -20,6 +21,10 @@ const listRequestsQuerySchema = z.object({
 
 const requestParamsSchema = z.object({
   id: z.coerce.number().int().positive()
+});
+
+const confirmPaymentSchema = z.object({
+  sessionId: z.string().min(1)
 });
 
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
@@ -109,7 +114,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     };
   });
 
-  app.post('/api/requests/:id/mock-pay', async (req, reply) => {
+  app.post('/api/requests/:id/checkout', async (req, reply) => {
     const parsed = requestParamsSchema.safeParse(req.params);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -118,15 +123,127 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       });
     }
 
-    const request = await app.prisma.sourcingRequest.findUnique({ where: { id: parsed.data.id } });
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsed.data.id },
+      include: { user: { select: { email: true } } }
+    });
     if (!request) {
       return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status !== RequestStatus.FEE_PENDING) {
+      return reply.status(409).send({ error: 'REQUEST_NOT_PAYABLE' });
+    }
+
+    const feeChf = Number(request.sourcingFeeChf);
+    const amountCents = Math.round(feeChf * 100);
+    if (!Number.isFinite(amountCents) || amountCents <= 0) {
+      return reply.status(400).send({ error: 'INVALID_FEE_AMOUNT' });
+    }
+
+    let stripe: ReturnType<typeof getStripeClient>;
+    try {
+      stripe = getStripeClient();
+    } catch (error) {
+      app.log.error({ error }, 'Stripe configuration missing');
+      return reply.status(503).send({ error: 'PAYMENT_PROVIDER_UNAVAILABLE' });
+    }
+    const webBaseUrl = getWebBaseUrl();
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      client_reference_id: String(request.id),
+      customer_email: request.user.email,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'chf',
+            unit_amount: amountCents,
+            product_data: {
+              name: 'Concierge sourcing fee',
+              description: 'Non-refundable sourcing fee for research and proposal preparation.'
+            }
+          }
+        }
+      ],
+      metadata: {
+        requestId: String(request.id)
+      },
+      success_url: `${webBaseUrl}/payment-success?requestId=${request.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${webBaseUrl}/payment/${request.id}?fee=${feeChf}&cancelled=true`
+    });
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: session.id
+    };
+  });
+
+  app.post('/api/requests/:id/confirm-payment', async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const parsedBody = confirmPaymentSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id },
+      include: { user: { select: { email: true } } }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status === RequestStatus.FEE_PAID) {
+      return {
+        id: request.id,
+        status: request.status,
+        feePaidAt: request.feePaidAt
+      };
+    }
+
+    const feeChf = Number(request.sourcingFeeChf);
+    const expectedAmount = Math.round(feeChf * 100);
+    let stripe: ReturnType<typeof getStripeClient>;
+    try {
+      stripe = getStripeClient();
+    } catch (error) {
+      app.log.error({ error }, 'Stripe configuration missing');
+      return reply.status(503).send({ error: 'PAYMENT_PROVIDER_UNAVAILABLE' });
+    }
+    const session = await stripe.checkout.sessions.retrieve(parsedBody.data.sessionId);
+
+    if (session.client_reference_id !== String(request.id)) {
+      return reply.status(400).send({ error: 'SESSION_MISMATCH' });
+    }
+
+    if (session.payment_status !== 'paid') {
+      return reply.status(409).send({ error: 'PAYMENT_NOT_COMPLETED' });
+    }
+
+    if (session.amount_total !== expectedAmount) {
+      return reply.status(409).send({ error: 'PAYMENT_AMOUNT_MISMATCH' });
+    }
+
+    if (session.currency !== 'chf') {
+      return reply.status(409).send({ error: 'PAYMENT_CURRENCY_MISMATCH' });
     }
 
     const now = new Date();
     const updated = await app.prisma.$transaction(async (tx) => {
       const updatedRequest = await tx.sourcingRequest.update({
-        where: { id: parsed.data.id },
+        where: { id: request.id },
         data: {
           feePaidAt: now,
           status: RequestStatus.FEE_PAID
@@ -138,7 +255,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           requestId: updatedRequest.id,
           fromStatus: request.status,
           toStatus: RequestStatus.FEE_PAID,
-          reason: 'Mock payment marked as paid'
+          reason: 'Stripe checkout payment confirmed',
+          metadata: {
+            sessionId: session.id,
+            paymentIntentId:
+              typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null
+          }
         }
       });
 

@@ -42,9 +42,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/prisma/migrations/20260221204500_init/migration.sql`, `apps/api/prisma/seed.ts`
 - id: ACQ-005
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Replace mock payment with PSP integration while preserving non-merchant role boundaries.
-  Evidence: `apps/web/src/pages/PaymentPage.tsx`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/PaymentPage.tsx`, `docs/API_SPEC.md`
 - id: ACQ-006
   priority: P1
   status: TODO
@@ -67,6 +67,16 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add Playwright smoke for create-request to dashboard flow.
   Evidence: `e2e/README.md`
+- id: ACQ-AUTO-004
+  priority: P2
+  status: TODO
+  DoD: Add webhook listener to reconcile PSP payments asynchronously.
+  Evidence: `apps/api/src/routes/requests.ts`
+- id: ACQ-AUTO-005
+  priority: P2
+  status: TODO
+  DoD: Add dashboard messaging for failed or abandoned payment sessions.
+  Evidence: `apps/web/src/pages/PaymentPage.tsx`
 
 ## TECH_DEBT
 - id: ACQ-DEBT-001

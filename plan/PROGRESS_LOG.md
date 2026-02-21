@@ -15,3 +15,4 @@
   - Dashboard request list/status
 - Authored documentation set for PRD/legal/state/API/security.
 - Added CI workflow running lint/typecheck/test/build.
+- 2026-02-21T20:04:44Z — ACQ-005 Replace mock payment with PSP integration — Result: Stripe Checkout session + confirmation flow wired, mock payment removed. — Next: ACQ-006 operator proposal publishing with expiry job.

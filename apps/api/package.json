@@ -21,6 +21,7 @@
     "@fastify/cors": "^11.0.0",
     "@prisma/client": "^6.4.1",
     "fastify": "^5.2.1",
+    "stripe": "^16.9.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
