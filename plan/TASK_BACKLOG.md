@@ -47,7 +47,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/PaymentPage.tsx`, `docs/API_SPEC.md`
 - id: ACQ-006
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add operator-side proposal publishing endpoint with 2-hour expiry job.
   Evidence: `docs/STATE_MACHINE.md`
 
@@ -77,6 +77,16 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add dashboard messaging for failed or abandoned payment sessions.
   Evidence: `apps/web/src/pages/PaymentPage.tsx`
+- id: ACQ-AUTO-006
+  priority: P1
+  status: TODO
+  DoD: Add operator-only auth guard for proposal publishing endpoint.
+  Evidence: `apps/api/src/routes/requests.ts`
+- id: ACQ-AUTO-007
+  priority: P2
+  status: TODO
+  DoD: Add tests covering proposal publish and expiry transitions.
+  Evidence: `apps/api/tests`
 
 ## TECH_DEBT
 - id: ACQ-DEBT-001

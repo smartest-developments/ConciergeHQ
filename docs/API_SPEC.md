@@ -113,3 +113,31 @@ Example response:
   "feePaidAt": "2026-02-21T20:55:00.000Z"
 }
 ```
+
+## POST /api/requests/:id/proposals
+Operator publishes a proposal and starts the 2-hour action window.
+
+Example request:
+```json
+{
+  "merchantName": "Alpine Bikes",
+  "externalUrl": "https://merchant.example/offer/abc",
+  "summary": "Used road bike, size 56, hydraulic brakes, ready to ship."
+}
+```
+
+Example response:
+```json
+{
+  "requestId": 42,
+  "status": "PROPOSAL_PUBLISHED",
+  "proposal": {
+    "id": 7,
+    "merchantName": "Alpine Bikes",
+    "externalUrl": "https://merchant.example/offer/abc",
+    "summary": "Used road bike, size 56, hydraulic brakes, ready to ship.",
+    "publishedAt": "2026-02-21T21:00:00.000Z",
+    "expiresAt": "2026-02-21T23:00:00.000Z"
+  }
+}
+```

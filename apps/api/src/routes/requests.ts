@@ -27,6 +27,12 @@ const confirmPaymentSchema = z.object({
   sessionId: z.string().min(1)
 });
 
+const publishProposalSchema = z.object({
+  merchantName: z.string().min(2).max(200),
+  externalUrl: z.string().url(),
+  summary: z.string().max(2000).optional()
+});
+
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/requests', async (req, reply) => {
     const parsed = createRequestSchema.safeParse(req.body);
@@ -271,6 +277,86 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       id: updated.id,
       status: updated.status,
       feePaidAt: updated.feePaidAt
+    };
+  });
+
+  app.post('/api/requests/:id/proposals', async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const parsedBody = publishProposalSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status !== RequestStatus.FEE_PAID && request.status !== RequestStatus.SOURCING) {
+      return reply.status(409).send({ error: 'REQUEST_NOT_READY_FOR_PROPOSAL' });
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const payload = parsedBody.data;
+
+    const result = await app.prisma.$transaction(async (tx) => {
+      const proposal = await tx.proposal.create({
+        data: {
+          requestId: request.id,
+          merchantName: payload.merchantName,
+          externalUrl: payload.externalUrl,
+          summary: payload.summary,
+          publishedAt: now,
+          expiresAt
+        }
+      });
+
+      const updatedRequest = await tx.sourcingRequest.update({
+        where: { id: request.id },
+        data: {
+          status: RequestStatus.PROPOSAL_PUBLISHED
+        }
+      });
+
+      await tx.requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: RequestStatus.PROPOSAL_PUBLISHED,
+          reason: 'Proposal published by operator',
+          metadata: {
+            proposalId: proposal.id
+          }
+        }
+      });
+
+      return { proposal, updatedRequest };
+    });
+
+    return {
+      requestId: result.updatedRequest.id,
+      status: result.updatedRequest.status,
+      proposal: {
+        id: result.proposal.id,
+        merchantName: result.proposal.merchantName,
+        externalUrl: result.proposal.externalUrl,
+        summary: result.proposal.summary,
+        publishedAt: result.proposal.publishedAt,
+        expiresAt: result.proposal.expiresAt
+      }
     };
   });
 }

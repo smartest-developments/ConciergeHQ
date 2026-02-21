@@ -5,6 +5,7 @@ import { prisma as defaultPrisma } from './lib/prisma.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerCategoriesRoute } from './routes/categories.js';
 import { registerRequestRoutes } from './routes/requests.js';
+import { startProposalExpiryJob } from './jobs/proposalExpiry.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -24,6 +25,11 @@ export function createServer(prismaClient: PrismaClient = defaultPrisma) {
   app.register(registerHealthRoute);
   app.register(registerCategoriesRoute);
   app.register(registerRequestRoutes);
+
+  const expiryJob = startProposalExpiryJob(app);
+  app.addHook('onClose', async () => {
+    clearInterval(expiryJob);
+  });
 
   return app;
 }
