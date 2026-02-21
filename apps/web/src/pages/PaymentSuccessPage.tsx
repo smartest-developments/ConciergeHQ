@@ -42,6 +42,10 @@ export function PaymentSuccessPage() {
     <section className="card">
       <h2>Payment Status</h2>
       {error ? <p className="error">{error}</p> : <p>Payment confirmed. Redirecting you to the dashboard.</p>}
+      <p className="warning">
+        Sourcing fees are non-refundable and cover research work only. Any product purchase happens on the
+        external merchant site.
+      </p>
     </section>
   );
 }

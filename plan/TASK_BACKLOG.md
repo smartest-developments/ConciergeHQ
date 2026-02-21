@@ -50,6 +50,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: Add operator-side proposal publishing endpoint with 2-hour expiry job.
   Evidence: `docs/STATE_MACHINE.md`
+- id: ACQ-RISK-001
+  priority: P0
+  status: DONE
+  DoD: Legal copy appears in all user-facing fee/proposal touchpoints.
+  Evidence: `docs/LEGAL_BOUNDARIES.md`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/PaymentSuccessPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`
 
 ## AUTO_DISCOVERED
 - id: ACQ-AUTO-001
@@ -87,6 +92,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add tests covering proposal publish and expiry transitions.
   Evidence: `apps/api/tests`
+- id: ACQ-AUTO-008
+  priority: P2
+  status: TODO
+  DoD: Surface proposal details (merchant + external URL) on the dashboard when status is PROPOSAL_PUBLISHED.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
 
 ## TECH_DEBT
 - id: ACQ-DEBT-001
@@ -101,11 +111,6 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/server.ts`
 
 ## RISK_ITEMS
-- id: ACQ-RISK-001
-  priority: P0
-  status: TODO
-  DoD: Legal copy appears in all user-facing fee/proposal touchpoints.
-  Evidence: `docs/LEGAL_BOUNDARIES.md`, `apps/web/src/pages/PaymentPage.tsx`
 - id: ACQ-RISK-002
   priority: P1
   status: TODO

@@ -17,6 +17,11 @@ export function DashboardPage() {
     feePaidAt: string | null;
   }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const hasProposalNotice = records.some(
+    (record) =>
+      record.status.startsWith('PROPOSAL') ||
+      record.status === 'COMPLETED'
+  );
 
   async function load(targetEmail: string) {
     try {
@@ -84,6 +89,12 @@ export function DashboardPage() {
           </tbody>
         </table>
       </div>
+      {hasProposalNotice ? (
+        <p className="warning">
+          Proposal links are time-bound and expire 2 hours after publication. Purchases happen on the external
+          merchant site; Acquisition Concierge is not the seller and does not provide after-sales support.
+        </p>
+      ) : null}
     </section>
   );
 }
