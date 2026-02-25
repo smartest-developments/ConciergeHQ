@@ -76,6 +76,14 @@ export async function fetchRequests(email?: string) {
       urgency: string;
       createdAt: string;
       feePaidAt: string | null;
+      proposal: {
+        id: number;
+        merchantName: string;
+        externalUrl: string;
+        summary: string | null;
+        publishedAt: string;
+        expiresAt: string;
+      } | null;
     }>;
   }>;
 }

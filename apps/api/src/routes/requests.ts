@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { allowedCategories, allowedCountries } from '../domain/constants.js';
 import { calculateSourcingFeeChf } from '../domain/fee.js';
 import { createIpRateLimiter } from '../lib/rateLimit.js';
+import { getRateLimitConfig } from '../lib/runtimeConfig.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
 
 const createRequestSchema = z.object({
@@ -34,20 +35,24 @@ const publishProposalSchema = z.object({
   summary: z.string().max(2000).optional()
 });
 
+const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
+
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
+  const rateLimitConfig = getRateLimitConfig();
+
   const requestLimiter = createIpRateLimiter({
-    windowMs: 10 * 60 * 1000,
-    maxRequests: 10,
+    windowMs: rateLimitConfig.windowMs,
+    maxRequests: rateLimitConfig.createMaxRequests,
     keyPrefix: 'requests:create'
   });
   const paymentLimiter = createIpRateLimiter({
-    windowMs: 10 * 60 * 1000,
-    maxRequests: 20,
+    windowMs: rateLimitConfig.windowMs,
+    maxRequests: rateLimitConfig.paymentMaxRequests,
     keyPrefix: 'requests:payment'
   });
   const proposalLimiter = createIpRateLimiter({
-    windowMs: 10 * 60 * 1000,
-    maxRequests: 20,
+    windowMs: rateLimitConfig.windowMs,
+    maxRequests: rateLimitConfig.proposalMaxRequests,
     keyPrefix: 'requests:proposal'
   });
 
@@ -57,6 +62,11 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     reply: FastifyReply
   ) => {
     const result = limiter.check(req);
+    reply
+      .header('X-RateLimit-Limit', result.limit)
+      .header('X-RateLimit-Remaining', result.remaining)
+      .header('X-RateLimit-Reset', Math.ceil(result.resetAt / 1000));
+
     if (!result.allowed) {
       const retryAfterSeconds = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
       return reply
@@ -137,24 +147,42 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       where: parsed.data.email ? { user: { email: parsed.data.email } } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { email: true } }
+        user: { select: { email: true } },
+        proposals: {
+          orderBy: { publishedAt: 'desc' },
+          take: 1
+        }
       }
     });
 
     return {
-      requests: requests.map((item) => ({
-        id: item.id,
-        userEmail: item.user.email,
-        budgetChf: Number(item.budgetChf),
-        category: item.category,
-        country: item.country,
-        condition: item.condition,
-        urgency: item.urgency,
-        sourcingFeeChf: Number(item.sourcingFeeChf),
-        status: item.status,
-        feePaidAt: item.feePaidAt,
-        createdAt: item.createdAt
-      }))
+      requests: requests.map((item) => {
+        const latestProposal = item.proposals[0];
+
+        return {
+          id: item.id,
+          userEmail: item.user.email,
+          budgetChf: Number(item.budgetChf),
+          category: item.category,
+          country: item.country,
+          condition: item.condition,
+          urgency: item.urgency,
+          sourcingFeeChf: Number(item.sourcingFeeChf),
+          status: item.status,
+          feePaidAt: item.feePaidAt,
+          createdAt: item.createdAt,
+          proposal: latestProposal
+            ? {
+                id: latestProposal.id,
+                merchantName: latestProposal.merchantName,
+                externalUrl: latestProposal.externalUrl,
+                summary: latestProposal.summary,
+                publishedAt: latestProposal.publishedAt,
+                expiresAt: latestProposal.expiresAt
+              }
+            : null
+        };
+      })
     };
   });
 
@@ -364,7 +392,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     }
 
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + PROPOSAL_ACTION_WINDOW_MS);
     const payload = parsedBody.data;
 
     const result = await app.prisma.$transaction(async (tx) => {

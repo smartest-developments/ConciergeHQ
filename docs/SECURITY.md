@@ -9,11 +9,12 @@
 - Fastify routes validate payloads with Zod.
 - Category and country inputs are strict allow-lists.
 - Fee amount is computed server-side only.
-- Rate limits (per IP):
-- `POST /api/requests`: 10 requests / 10 minutes.
-- `POST /api/requests/:id/checkout`: 20 requests / 10 minutes.
-- `POST /api/requests/:id/confirm-payment`: 20 requests / 10 minutes.
-- `POST /api/requests/:id/proposals`: 20 requests / 10 minutes.
+- Rate limits (per IP, env-configurable via `RATE_LIMIT_*` variables):
+  - `POST /api/requests`: default 10 requests / 10 minutes.
+  - `POST /api/requests/:id/checkout`: default 20 requests / 10 minutes.
+  - `POST /api/requests/:id/confirm-payment`: default 20 requests / 10 minutes.
+  - `POST /api/requests/:id/proposals`: default 20 requests / 10 minutes.
+- Rate-limited routes expose `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`; blocked requests also return `Retry-After`.
 - Planned: global cap for unauthenticated routes.
 
 ## Data protection

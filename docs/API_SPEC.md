@@ -2,6 +2,17 @@
 
 Base URL: `http://localhost:3001`
 
+## Common error and throttling model
+- Validation failures: `400` + `{ "error": "VALIDATION_ERROR", "details": ... }`.
+- Unknown request id: `404` + `{ "error": "REQUEST_NOT_FOUND" }`.
+- Business-state conflicts: `409` + domain-specific error codes.
+- Rate limit exceeded: `429` + `{ "error": "RATE_LIMITED" }`.
+- Rate-limited endpoints include:
+  - `X-RateLimit-Limit`
+  - `X-RateLimit-Remaining`
+  - `X-RateLimit-Reset` (unix seconds)
+  - `Retry-After` (only when blocked with 429)
+
 ## GET /api/health
 Health check.
 
@@ -62,6 +73,7 @@ Validation notes:
 
 ## GET /api/requests?email=<userEmail>
 List requests. Optional `email` filter.
+Includes latest proposal details when available.
 
 Example response:
 ```json
@@ -78,7 +90,29 @@ Example response:
       "sourcingFeeChf": 180,
       "status": "FEE_PENDING",
       "feePaidAt": null,
-      "createdAt": "2026-02-21T20:50:00.000Z"
+      "createdAt": "2026-02-21T20:50:00.000Z",
+      "proposal": null
+    },
+    {
+      "id": 43,
+      "userEmail": "buyer@example.com",
+      "budgetChf": 2200,
+      "category": "ELECTRONICS",
+      "country": "CH",
+      "condition": "USED",
+      "urgency": "STANDARD",
+      "sourcingFeeChf": 220,
+      "status": "PROPOSAL_PUBLISHED",
+      "feePaidAt": "2026-02-21T21:10:00.000Z",
+      "createdAt": "2026-02-21T20:58:00.000Z",
+      "proposal": {
+        "id": 7,
+        "merchantName": "Alpine Bikes",
+        "externalUrl": "https://merchant.example/offer/abc",
+        "summary": "Used road bike, size 56, hydraulic brakes, ready to ship.",
+        "publishedAt": "2026-02-21T21:30:00.000Z",
+        "expiresAt": "2026-02-21T23:30:00.000Z"
+      }
     }
   ]
 }

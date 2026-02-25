@@ -39,6 +39,7 @@ Blocked:
 
 ## Success criteria (v1)
 - User can create request and see fee.
-- User can mark fee paid (mock placeholder in bootstrap).
+- User can pay sourcing fee via PSP checkout and get confirmation.
 - User can see request statuses in dashboard.
+- User can see published proposal merchant/link details and expiry.
 - API enforces category and country constraints.

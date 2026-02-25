@@ -27,6 +27,11 @@ npm install
 cp .env.example .env
 ```
 Set `STRIPE_SECRET_KEY` to a Stripe test key to enable PSP checkout.
+Optionally tune abuse controls through:
+- `RATE_LIMIT_WINDOW_MINUTES`
+- `RATE_LIMIT_CREATE_MAX_REQUESTS`
+- `RATE_LIMIT_PAYMENT_MAX_REQUESTS`
+- `RATE_LIMIT_PROPOSAL_MAX_REQUESTS`
 3. Start PostgreSQL:
 ```bash
 npm run db:up

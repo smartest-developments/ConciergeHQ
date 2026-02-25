@@ -1,8 +1,13 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchRequests } from '../api';
 
 export function DashboardPage() {
-  const [email, setEmail] = useState(localStorage.getItem('acq_user_email') ?? 'demo@acquisitionconcierge.ch');
+  const [searchParams] = useSearchParams();
+  const queryEmail = searchParams.get('email')?.trim();
+  const initialEmail = queryEmail || localStorage.getItem('acq_user_email') || 'demo@acquisitionconcierge.ch';
+
+  const [email, setEmail] = useState(initialEmail);
   const [records, setRecords] = useState<Array<{
     id: number;
     status: string;
@@ -15,13 +20,17 @@ export function DashboardPage() {
     urgency: string;
     createdAt: string;
     feePaidAt: string | null;
+    proposal: {
+      id: number;
+      merchantName: string;
+      externalUrl: string;
+      summary: string | null;
+      publishedAt: string;
+      expiresAt: string;
+    } | null;
   }>>([]);
   const [error, setError] = useState<string | null>(null);
-  const hasProposalNotice = records.some(
-    (record) =>
-      record.status.startsWith('PROPOSAL') ||
-      record.status === 'COMPLETED'
-  );
+  const hasProposalNotice = records.some((record) => record.proposal !== null);
 
   async function load(targetEmail: string) {
     try {
@@ -34,7 +43,8 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    void load(email);
+    localStorage.setItem('acq_user_email', initialEmail);
+    void load(initialEmail);
   }, []);
 
   async function onFilter(event: FormEvent) {
@@ -67,6 +77,7 @@ export function DashboardPage() {
               <th>Fee</th>
               <th>Country</th>
               <th>Created</th>
+              <th>Proposal</th>
             </tr>
           </thead>
           <tbody>
@@ -79,11 +90,23 @@ export function DashboardPage() {
                 <td>{record.sourcingFeeChf} CHF</td>
                 <td>{record.country}</td>
                 <td>{new Date(record.createdAt).toLocaleString()}</td>
+                <td>
+                  {record.proposal ? (
+                    <div className="proposal-cell">
+                      <a href={record.proposal.externalUrl} target="_blank" rel="noreferrer">
+                        {record.proposal.merchantName}
+                      </a>
+                      <small>Expires: {new Date(record.proposal.expiresAt).toLocaleString()}</small>
+                    </div>
+                  ) : (
+                    '—'
+                  )}
+                </td>
               </tr>
             ))}
             {records.length === 0 ? (
               <tr>
-                <td colSpan={7}>No requests found.</td>
+                <td colSpan={8}>No requests found.</td>
               </tr>
             ) : null}
           </tbody>

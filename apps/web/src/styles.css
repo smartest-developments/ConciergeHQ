@@ -131,6 +131,21 @@ td {
   font-size: 0.9rem;
 }
 
+.proposal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.proposal-cell a {
+  color: #0b5e72;
+  font-weight: 600;
+}
+
+.proposal-cell small {
+  color: #44525b;
+}
+
 @media (max-width: 700px) {
   .layout {
     padding: 1rem;
