@@ -1,5 +1,8 @@
 # PROGRESS_LOG
 
+## 2026-03-04
+- 2026-03-04T00:02:51+0100 — ACQ-AUTO-016 Request listing pagination controls — Result: Added `page`/`pageSize` query support (default `1`/`20`, max `100`) with total-count metadata on `GET /api/requests`, added pagination integration tests, and updated API spec docs for new query/response contract. — Next: ACQ-AUTH-001 secure session authentication foundation with role-based route protection.
+
 ## 2026-03-03
 - 2026-03-03T19:02:14+0100 — ACQ-AUTO-013 Race-safe proposal expiry job — Result: Reworked expiry processing to evaluate only the latest active proposal, added compare-and-set transition (`updateMany` on `PROPOSAL_PUBLISHED`) to prevent duplicate `PROPOSAL_EXPIRED` events across workers, and added dedicated expiry-job tests for idempotency and window checks. — Next: ACQ-AUTH-001 secure session authentication foundation with role-based route protection.
 - 2026-03-03T18:18:42+0100 — ACQ-AUTO-012 Explicit state transition APIs — Result: Added `start-sourcing`, `complete`, and `cancel` endpoints with operator auth where required, conflict guards, request status event logging, API/state-machine docs updates, and new route tests for transition happy/unhappy paths. — Next: ACQ-AUTO-013 race-safe proposal expiry to avoid duplicate `PROPOSAL_EXPIRED` events across instances.

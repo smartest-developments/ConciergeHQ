@@ -1,6 +1,6 @@
 # TASK_BACKLOG
 
-Last reviewed: **2026-03-03**
+Last reviewed: **2026-03-04**
 
 Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discovery and enforce `P0 <= 7` items.
 
@@ -45,7 +45,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 - item: MUST-05
   priority: P1
   status: TODO
-  Scope: `ACQ-AUTO-004`, `ACQ-AUTO-014`, `ACQ-AUTO-015`, `ACQ-AUTO-016`, `ACQ-AUTO-017`, `ACQ-REL-004`, `ACQ-REL-006`, `ACQ-REL-011`
+  Scope: `ACQ-AUTO-004`, `ACQ-AUTO-017`, `ACQ-REL-004`, `ACQ-REL-006`, `ACQ-REL-011`
   Exit: Payment reconciliation, platform hardening, and release quality gates are automated and measurable.
 
 ## ACTIVE_TASKS
@@ -168,9 +168,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/index.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/src/lib/stripe.ts`, `apps/api/tests/runtimeConfig.test.ts`
 - id: ACQ-AUTO-016
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add pagination controls to `GET /api/requests` and document limits in API spec.
-  Evidence: `apps/api/src/routes/requests.ts`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-pagination.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-AUTO-017
   priority: P1
   status: TODO

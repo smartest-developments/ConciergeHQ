@@ -18,7 +18,9 @@ const createRequestSchema = z.object({
 });
 
 const listRequestsQuerySchema = z.object({
-  email: z.string().email().optional()
+  email: z.string().email().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional()
 });
 
 const requestParamsSchema = z.object({
@@ -180,8 +182,18 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       });
     }
 
+    const page = parsed.data.page ?? 1;
+    const pageSize = parsed.data.pageSize ?? 20;
+    const whereClause = parsed.data.email ? { user: { email: parsed.data.email } } : undefined;
+
+    const total = await app.prisma.sourcingRequest.count({
+      where: whereClause
+    });
+
     const requests = await app.prisma.sourcingRequest.findMany({
-      where: parsed.data.email ? { user: { email: parsed.data.email } } : undefined,
+      where: whereClause,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { email: true } },
@@ -193,6 +205,9 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     });
 
     return {
+      page,
+      pageSize,
+      total,
       requests: requests.map((item) => {
         const latestProposal = item.proposals[0];
 

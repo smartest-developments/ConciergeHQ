@@ -1,7 +1,7 @@
 # HEALTH_SCORE
 
-Last update: **2026-03-03**
-Current score: **98 / 100**
+Last update: **2026-03-04**
+Current score: **99 / 100**
 
 Reasons:
 - Planning metadata realigned to the current project state and date.
@@ -13,6 +13,7 @@ Reasons:
 - Startup now validates required and typed runtime env values with fail-fast boot errors.
 - Missing state transitions now have explicit APIs with event logging and test coverage.
 - Proposal expiry processing is now idempotent/race-safe across multi-instance workers and only expires the latest active proposal.
+- Request listing now supports bounded pagination (`page`, `pageSize<=100`) with test coverage and API documentation.
 - Core build checks remain green (`lint`, `typecheck`, `test`, `build`).
 - Auth and role enforcement are still pending.
 
@@ -24,9 +25,9 @@ Reasons:
 - Test coverage depth (15): 15
 - Delivery hygiene (10): 10
 
-Total: **98 / 100**
+Total: **99 / 100**
 
 ## Improvement levers
 1. Add authenticated sessions and role-aware operator identity (replace static operator key).
-2. Add pagination controls to `GET /api/requests` and document bounds/limits.
-3. Expand automated coverage (integration + e2e) for checkout, proposal expiry, and throttling behavior.
+2. Expand automated coverage (integration + e2e) for checkout, proposal expiry, and throttling behavior.
+3. Add customer-authenticated request scoping in API and dashboard (remove public email filtering).

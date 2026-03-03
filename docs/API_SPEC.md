@@ -80,13 +80,21 @@ Validation notes:
 - `budgetChf` must be positive.
 - Fee formula: `max(50, budget * 0.10)`.
 
-## GET /api/requests?email=<userEmail>
-List requests. Optional `email` filter.
+## GET /api/requests?email=<userEmail>&page=<n>&pageSize=<n>
+List requests with optional filtering and pagination.
 Includes latest proposal details when available.
+
+Query params:
+- `email` (optional): customer email filter.
+- `page` (optional): 1-based page number, default `1`.
+- `pageSize` (optional): items per page, default `20`, max `100`.
 
 Example response:
 ```json
 {
+  "page": 1,
+  "pageSize": 20,
+  "total": 2,
   "requests": [
     {
       "id": 42,
