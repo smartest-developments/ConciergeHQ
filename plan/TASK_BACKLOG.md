@@ -25,8 +25,8 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 - item: MUST-01
   priority: P0
   status: TODO
-  Scope: `ACQ-AUTH-001`, `ACQ-AUTO-006`, `ACQ-AUTO-013`
-  Exit: Auth + RBAC enforcement and complete/race-safe status transitions validated in staging.
+  Scope: `ACQ-AUTH-001`
+  Exit: Auth + RBAC enforcement validated in staging after transition hardening tasks.
 - item: MUST-02
   priority: P0
   status: TODO
@@ -153,9 +153,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/request-transitions.test.ts`, `docs/STATE_MACHINE.md`, `docs/API_SPEC.md`
 - id: ACQ-AUTO-013
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Make proposal expiry processing race-safe across multiple API instances and prevent duplicate `PROPOSAL_EXPIRED` events.
-  Evidence: `apps/api/src/jobs/proposalExpiry.ts`
+  Evidence: `apps/api/src/jobs/proposalExpiry.ts`, `apps/api/tests/proposal-expiry-job.test.ts`
 - id: ACQ-AUTO-014
   priority: P1
   status: DONE

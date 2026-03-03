@@ -16,23 +16,14 @@ export function startProposalExpiryJob(app: FastifyInstance, intervalMs = DEFAUL
       const now = new Date();
       const expiredRequests = await app.prisma.sourcingRequest.findMany({
         where: {
-          status: RequestStatus.PROPOSAL_PUBLISHED,
-          proposals: {
-            some: {
-              expiresAt: {
-                lte: now
-              }
-            }
-          }
+          status: RequestStatus.PROPOSAL_PUBLISHED
         },
         include: {
           proposals: {
             where: {
-              expiresAt: {
-                lte: now
-              }
+              actedAt: null
             },
-            orderBy: { expiresAt: 'desc' },
+            orderBy: { publishedAt: 'desc' },
             take: 1
           }
         }
@@ -40,18 +31,29 @@ export function startProposalExpiryJob(app: FastifyInstance, intervalMs = DEFAUL
 
       for (const request of expiredRequests) {
         const proposal = request.proposals[0];
+        if (!proposal || proposal.expiresAt > now) {
+          continue;
+        }
+
         await app.prisma.$transaction(async (tx) => {
-          await tx.sourcingRequest.update({
-            where: { id: request.id },
+          const transition = await tx.sourcingRequest.updateMany({
+            where: {
+              id: request.id,
+              status: RequestStatus.PROPOSAL_PUBLISHED
+            },
             data: {
               status: RequestStatus.PROPOSAL_EXPIRED
             }
           });
 
+          if (transition.count === 0) {
+            return;
+          }
+
           await tx.requestStatusEvent.create({
             data: {
               requestId: request.id,
-              fromStatus: request.status,
+              fromStatus: RequestStatus.PROPOSAL_PUBLISHED,
               toStatus: RequestStatus.PROPOSAL_EXPIRED,
               reason: 'Proposal expired after 2 hour window',
               metadata: proposal
