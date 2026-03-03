@@ -191,3 +191,63 @@ Example response:
   }
 }
 ```
+
+## POST /api/requests/:id/start-sourcing
+Operator moves a paid request into active sourcing.
+
+Required headers:
+- `Authorization: Bearer <OPERATOR_API_KEY>`
+
+Error responses:
+- `503 { "error": "OPERATOR_AUTH_NOT_CONFIGURED" }` when `OPERATOR_API_KEY` is missing server-side.
+- `401 { "error": "OPERATOR_UNAUTHORIZED" }` when bearer token is missing/invalid.
+- `409 { "error": "REQUEST_NOT_READY_FOR_SOURCING" }` when request is not `FEE_PAID`.
+
+Example response:
+```json
+{
+  "id": 42,
+  "status": "SOURCING"
+}
+```
+
+## POST /api/requests/:id/complete
+Marks a published proposal as completed if the 2-hour action window is still open.
+
+Error responses:
+- `409 { "error": "REQUEST_NOT_COMPLETABLE" }` when request is not `PROPOSAL_PUBLISHED`.
+- `409 { "error": "ACTIVE_PROPOSAL_NOT_FOUND" }` when no active proposal exists.
+- `409 { "error": "PROPOSAL_ACTION_WINDOW_EXPIRED" }` when proposal has already expired.
+
+Example response:
+```json
+{
+  "id": 42,
+  "status": "COMPLETED",
+  "proposal": {
+    "id": 7,
+    "actedAt": "2026-02-21T21:45:00.000Z"
+  }
+}
+```
+
+## POST /api/requests/:id/cancel
+Operator cancels a request from any current status with a required reason.
+
+Required headers:
+- `Authorization: Bearer <OPERATOR_API_KEY>`
+
+Example request:
+```json
+{
+  "reason": "Unsupported item category under policy constraints."
+}
+```
+
+Example response:
+```json
+{
+  "id": 42,
+  "status": "CANCELED"
+}
+```

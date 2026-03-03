@@ -24,6 +24,13 @@
 6. `* -> CANCELED`
    - Trigger: policy breach, unsupported item, compliance issue.
 
+## API mapping
+- `POST /api/requests/:id/confirm-payment` transitions `FEE_PENDING -> FEE_PAID`.
+- `POST /api/requests/:id/start-sourcing` transitions `FEE_PAID -> SOURCING`.
+- `POST /api/requests/:id/proposals` transitions `FEE_PAID|SOURCING -> PROPOSAL_PUBLISHED`.
+- `POST /api/requests/:id/complete` transitions `PROPOSAL_PUBLISHED -> COMPLETED` when proposal is still inside action window.
+- `POST /api/requests/:id/cancel` transitions any state to `CANCELED` with a required reason.
+
 ## Event logging
 Each transition writes `RequestStatusEvent` with:
 - `fromStatus`

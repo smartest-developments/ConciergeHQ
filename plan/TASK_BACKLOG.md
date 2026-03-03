@@ -25,7 +25,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 - item: MUST-01
   priority: P0
   status: TODO
-  Scope: `ACQ-AUTH-001`, `ACQ-AUTO-006`, `ACQ-AUTO-012`, `ACQ-AUTO-013`
+  Scope: `ACQ-AUTH-001`, `ACQ-AUTO-006`, `ACQ-AUTO-013`
   Exit: Auth + RBAC enforcement and complete/race-safe status transitions validated in staging.
 - item: MUST-02
   priority: P0
@@ -148,9 +148,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/lib/rateLimit.ts`
 - id: ACQ-AUTO-012
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Implement missing state-machine transitions (`FEE_PAID -> SOURCING`, `PROPOSAL_PUBLISHED -> COMPLETED`, `* -> CANCELED`) with explicit APIs and event logging.
-  Evidence: `docs/STATE_MACHINE.md`, `apps/api/src/routes/requests.ts`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/request-transitions.test.ts`, `docs/STATE_MACHINE.md`, `docs/API_SPEC.md`
 - id: ACQ-AUTO-013
   priority: P0
   status: TODO

@@ -35,6 +35,10 @@ const publishProposalSchema = z.object({
   summary: z.string().max(2000).optional()
 });
 
+const cancelRequestSchema = z.object({
+  reason: z.string().min(3).max(500)
+});
+
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 function parseBearerToken(authorizationHeader: string | string[] | undefined): string | null {
@@ -95,6 +99,17 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         .header('Retry-After', retryAfterSeconds)
         .status(429)
         .send({ error: 'RATE_LIMITED' });
+    }
+  };
+
+  const enforceOperatorAuth = (req: FastifyRequest, reply: FastifyReply) => {
+    if (!operatorApiKey) {
+      return reply.status(503).send({ error: 'OPERATOR_AUTH_NOT_CONFIGURED' });
+    }
+
+    const token = parseBearerToken(req.headers.authorization);
+    if (!token || token !== operatorApiKey) {
+      return reply.status(401).send({ error: 'OPERATOR_UNAUTHORIZED' });
     }
   };
 
@@ -389,14 +404,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           return rateLimitResponse;
         }
 
-        if (!operatorApiKey) {
-          return reply.status(503).send({ error: 'OPERATOR_AUTH_NOT_CONFIGURED' });
-        }
-
-        const token = parseBearerToken(req.headers.authorization);
-        if (!token || token !== operatorApiKey) {
-          return reply.status(401).send({ error: 'OPERATOR_UNAUTHORIZED' });
-        }
+        return enforceOperatorAuth(req, reply);
       }
     },
     async (req, reply) => {
@@ -476,6 +484,189 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         publishedAt: result.proposal.publishedAt,
         expiresAt: result.proposal.expiresAt
       }
+    };
+    }
+  );
+
+  app.post(
+    '/api/requests/:id/start-sourcing',
+    {
+      preHandler: async (req, reply) => enforceOperatorAuth(req, reply)
+    },
+    async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status !== RequestStatus.FEE_PAID) {
+      return reply.status(409).send({ error: 'REQUEST_NOT_READY_FOR_SOURCING' });
+    }
+
+    const updated = await app.prisma.$transaction(async (tx) => {
+      const updatedRequest = await tx.sourcingRequest.update({
+        where: { id: request.id },
+        data: { status: RequestStatus.SOURCING }
+      });
+
+      await tx.requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: RequestStatus.SOURCING,
+          reason: 'Operator started sourcing'
+        }
+      });
+
+      return updatedRequest;
+    });
+
+    return {
+      id: updated.id,
+      status: updated.status
+    };
+    }
+  );
+
+  app.post('/api/requests/:id/complete', async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id },
+      include: {
+        proposals: {
+          orderBy: { publishedAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status !== RequestStatus.PROPOSAL_PUBLISHED) {
+      return reply.status(409).send({ error: 'REQUEST_NOT_COMPLETABLE' });
+    }
+
+    const activeProposal = request.proposals[0];
+    if (!activeProposal) {
+      return reply.status(409).send({ error: 'ACTIVE_PROPOSAL_NOT_FOUND' });
+    }
+
+    const now = new Date();
+    if (activeProposal.expiresAt <= now) {
+      return reply.status(409).send({ error: 'PROPOSAL_ACTION_WINDOW_EXPIRED' });
+    }
+
+    const result = await app.prisma.$transaction(async (tx) => {
+      const updatedRequest = await tx.sourcingRequest.update({
+        where: { id: request.id },
+        data: { status: RequestStatus.COMPLETED }
+      });
+
+      const updatedProposal = await tx.proposal.update({
+        where: { id: activeProposal.id },
+        data: { actedAt: now }
+      });
+
+      await tx.requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: RequestStatus.COMPLETED,
+          reason: 'User confirmed proposal action',
+          metadata: {
+            proposalId: activeProposal.id
+          }
+        }
+      });
+
+      return { updatedRequest, updatedProposal };
+    });
+
+    return {
+      id: result.updatedRequest.id,
+      status: result.updatedRequest.status,
+      proposal: {
+        id: result.updatedProposal.id,
+        actedAt: result.updatedProposal.actedAt
+      }
+    };
+  });
+
+  app.post(
+    '/api/requests/:id/cancel',
+    {
+      preHandler: async (req, reply) => enforceOperatorAuth(req, reply)
+    },
+    async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const parsedBody = cancelRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (request.status === RequestStatus.CANCELED) {
+      return {
+        id: request.id,
+        status: request.status
+      };
+    }
+
+    const updated = await app.prisma.$transaction(async (tx) => {
+      const updatedRequest = await tx.sourcingRequest.update({
+        where: { id: request.id },
+        data: { status: RequestStatus.CANCELED }
+      });
+
+      await tx.requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: RequestStatus.CANCELED,
+          reason: parsedBody.data.reason
+        }
+      });
+
+      return updatedRequest;
+    });
+
+    return {
+      id: updated.id,
+      status: updated.status
     };
     }
   );
