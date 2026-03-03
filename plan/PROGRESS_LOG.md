@@ -1,5 +1,8 @@
 # PROGRESS_LOG
 
+## 2026-03-03
+- 2026-03-03T10:01:50+0100 — ACQ-AUTO-014 Env-driven CORS allow-list hardening — Result: Added `CORS_ALLOWED_ORIGINS` + `WEB_BASE_URL` driven CORS policy, disabled production wildcard fallback, added CORS tests, and updated security docs. — Next: ACQ-AUTO-015 startup env validation with fail-fast typed checks.
+
 ## 2026-02-25
 - Repository planning/doc hygiene refresh completed to realign project metadata with current date.
 - Added env-configurable rate-limit thresholds (`RATE_LIMIT_*`) for production tuning.

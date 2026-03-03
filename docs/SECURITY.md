@@ -27,7 +27,12 @@
 - Never log full request bodies with sensitive free-form content by default.
 - Planned: request-id correlation and audit trail on status transitions.
 
+## CORS policy
+- CORS is now environment-driven via `CORS_ALLOWED_ORIGINS` (comma-separated absolute origins).
+- `WEB_BASE_URL` is automatically included in the CORS allow-list when valid.
+- In non-production environments, if no allow-list is configured, CORS allows all origins to preserve local DX.
+- In production (`NODE_ENV=production`), wildcard behavior is disabled; only configured allow-list origins receive CORS allow headers.
+
 ## Operational hardening backlog
 - Add CSRF protections when cookie sessions are introduced.
-- Add origin allow-list for CORS in production.
 - Add secret scanning and dependency vulnerability checks in CI.

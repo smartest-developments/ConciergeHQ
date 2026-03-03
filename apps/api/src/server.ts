@@ -6,6 +6,7 @@ import { registerHealthRoute } from './routes/health.js';
 import { registerCategoriesRoute } from './routes/categories.js';
 import { registerRequestRoutes } from './routes/requests.js';
 import { startProposalExpiryJob } from './jobs/proposalExpiry.js';
+import { getCorsConfig } from './lib/runtimeConfig.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -15,9 +16,17 @@ declare module 'fastify' {
 
 export function createServer(prismaClient: PrismaClient = defaultPrisma) {
   const app = Fastify({ logger: true });
+  const corsConfig = getCorsConfig();
 
   app.register(cors, {
-    origin: true
+    origin: (origin, callback) => {
+      if (!origin || corsConfig.allowAllOrigins) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, corsConfig.allowedOrigins.includes(origin));
+    }
   });
 
   app.decorate('prisma', prismaClient);
