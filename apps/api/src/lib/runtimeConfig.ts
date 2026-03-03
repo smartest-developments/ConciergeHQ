@@ -49,6 +49,11 @@ export type RateLimitConfig = {
   proposalMaxRequests: number;
 };
 
+export function getOperatorApiKey(): string | null {
+  const value = process.env.OPERATOR_API_KEY?.trim();
+  return value && value.length > 0 ? value : null;
+}
+
 export type CorsConfig = {
   allowAllOrigins: boolean;
   allowedOrigins: string[];

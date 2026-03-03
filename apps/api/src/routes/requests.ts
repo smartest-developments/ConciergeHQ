@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { allowedCategories, allowedCountries } from '../domain/constants.js';
 import { calculateSourcingFeeChf } from '../domain/fee.js';
 import { createIpRateLimiter } from '../lib/rateLimit.js';
-import { getRateLimitConfig } from '../lib/runtimeConfig.js';
+import { getOperatorApiKey, getRateLimitConfig } from '../lib/runtimeConfig.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
 
 const createRequestSchema = z.object({
@@ -37,8 +37,30 @@ const publishProposalSchema = z.object({
 
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
 
+function parseBearerToken(authorizationHeader: string | string[] | undefined): string | null {
+  if (!authorizationHeader) {
+    return null;
+  }
+
+  const normalizedHeader = Array.isArray(authorizationHeader)
+    ? authorizationHeader[0]
+    : authorizationHeader;
+
+  if (!normalizedHeader) {
+    return null;
+  }
+
+  const [scheme, token] = normalizedHeader.split(' ');
+  if (!scheme || !token || scheme.toLowerCase() !== 'bearer') {
+    return null;
+  }
+
+  return token.trim() || null;
+}
+
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
   const rateLimitConfig = getRateLimitConfig();
+  const operatorApiKey = getOperatorApiKey();
 
   const requestLimiter = createIpRateLimiter({
     windowMs: rateLimitConfig.windowMs,
@@ -361,7 +383,21 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
   app.post(
     '/api/requests/:id/proposals',
     {
-      preHandler: (req, reply) => enforceRateLimit(proposalLimiter, req, reply)
+      preHandler: async (req, reply) => {
+        const rateLimitResponse = enforceRateLimit(proposalLimiter, req, reply);
+        if (rateLimitResponse) {
+          return rateLimitResponse;
+        }
+
+        if (!operatorApiKey) {
+          return reply.status(503).send({ error: 'OPERATOR_AUTH_NOT_CONFIGURED' });
+        }
+
+        const token = parseBearerToken(req.headers.authorization);
+        if (!token || token !== operatorApiKey) {
+          return reply.status(401).send({ error: 'OPERATOR_UNAUTHORIZED' });
+        }
+      }
     },
     async (req, reply) => {
     const parsedParams = requestParamsSchema.safeParse(req.params);

@@ -1,6 +1,7 @@
 # PROGRESS_LOG
 
 ## 2026-03-03
+- 2026-03-03T16:02:16+0100 — ACQ-AUTO-006 Operator auth guard for proposal publishing — Result: Added `Authorization: Bearer` gate backed by `OPERATOR_API_KEY`, fail-closed misconfiguration handling (`503`), and route tests for unauthorized/authorized cases. — Next: ACQ-AUTO-012 missing explicit state transition APIs with event logging.
 - 2026-03-03T11:02:54+0100 — ACQ-AUTO-015 Startup env validation hardening — Result: Added fail-fast startup validation for required env vars and typed values (`PORT`, `NODE_ENV`, `RATE_LIMIT_*`, `CORS_ALLOWED_ORIGINS`), normalized `WEB_BASE_URL` validation, and added runtime config tests. — Next: ACQ-AUTO-016 pagination controls for `GET /api/requests`.
 - 2026-03-03T10:01:50+0100 — ACQ-AUTO-014 Env-driven CORS allow-list hardening — Result: Added `CORS_ALLOWED_ORIGINS` + `WEB_BASE_URL` driven CORS policy, disabled production wildcard fallback, added CORS tests, and updated security docs. — Next: ACQ-AUTO-015 startup env validation with fail-fast typed checks.
 

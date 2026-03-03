@@ -160,6 +160,13 @@ Example response:
 ## POST /api/requests/:id/proposals
 Operator publishes a proposal and starts the 2-hour action window.
 
+Required headers:
+- `Authorization: Bearer <OPERATOR_API_KEY>`
+
+Error responses:
+- `503 { "error": "OPERATOR_AUTH_NOT_CONFIGURED" }` when `OPERATOR_API_KEY` is missing server-side.
+- `401 { "error": "OPERATOR_UNAUTHORIZED" }` when bearer token is missing/invalid.
+
 Example request:
 ```json
 {

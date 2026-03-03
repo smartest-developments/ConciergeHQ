@@ -8,6 +8,7 @@ Reasons:
 - Rate-limit controls now support env-based production tuning.
 - API now exposes explicit throttling headers and documented 429 behavior.
 - Dashboard now shows proposal details (merchant/link/expiry) when published.
+- Proposal publishing now fails closed behind an operator bearer token (`OPERATOR_API_KEY`).
 - API CORS is now environment-driven with production allow-list enforcement.
 - Startup now validates required and typed runtime env values with fail-fast boot errors.
 - Core build checks remain green (`lint`, `typecheck`, `test`, `build`).
@@ -24,7 +25,7 @@ Reasons:
 Total: **96 / 100**
 
 ## Improvement levers
-1. Add authenticated sessions and operator RBAC guard on proposal publishing.
+1. Add authenticated sessions and role-aware operator identity (replace static operator key).
 2. Implement missing state transitions (`FEE_PAID -> SOURCING`, `PROPOSAL_PUBLISHED -> COMPLETED`, `* -> CANCELED`) with explicit APIs.
 3. Add pagination controls to `GET /api/requests` and document bounds/limits.
 4. Expand automated coverage (integration + e2e) for checkout, proposal expiry, and throttling behavior.
