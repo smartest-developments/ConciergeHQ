@@ -2,6 +2,15 @@
 
 Base URL: `http://localhost:3001`
 
+## Runtime configuration requirements
+- Required env vars at API startup: `DATABASE_URL`, `STRIPE_SECRET_KEY`, `WEB_BASE_URL`.
+- Typed env validation at startup:
+  - `PORT`: integer in range `1..65535`.
+  - `NODE_ENV`: `development`, `test`, or `production` when set.
+  - `RATE_LIMIT_WINDOW_MINUTES`, `RATE_LIMIT_CREATE_MAX_REQUESTS`, `RATE_LIMIT_PAYMENT_MAX_REQUESTS`, `RATE_LIMIT_PROPOSAL_MAX_REQUESTS`: positive integers when set.
+  - `CORS_ALLOWED_ORIGINS`: comma-separated absolute origins.
+- Startup fails fast when runtime config is invalid.
+
 ## Common error and throttling model
 - Validation failures: `400` + `{ "error": "VALIDATION_ERROR", "details": ... }`.
 - Unknown request id: `404` + `{ "error": "REQUEST_NOT_FOUND" }`.

@@ -33,6 +33,12 @@
 - In non-production environments, if no allow-list is configured, CORS allows all origins to preserve local DX.
 - In production (`NODE_ENV=production`), wildcard behavior is disabled; only configured allow-list origins receive CORS allow headers.
 
+## Startup configuration hardening
+- API startup now validates required environment variables and exits fast on configuration errors.
+- Required env keys: `DATABASE_URL`, `STRIPE_SECRET_KEY`, `WEB_BASE_URL`.
+- Typed env checks: `PORT` (1-65535), `RATE_LIMIT_*` positive integers, `NODE_ENV` (`development|test|production`), and `CORS_ALLOWED_ORIGINS` as absolute origins.
+- Invalid configuration no longer silently falls back at process boot; startup fails with explicit error details.
+
 ## Operational hardening backlog
 - Add CSRF protections when cookie sessions are introduced.
 - Add secret scanning and dependency vulnerability checks in CI.

@@ -163,9 +163,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/server.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/tests/cors.test.ts`, `docs/SECURITY.md`
 - id: ACQ-AUTO-015
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add startup env validation with fail-fast errors for required and typed configuration values.
-  Evidence: `apps/api/src/index.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/src/lib/stripe.ts`
+  Evidence: `apps/api/src/index.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/src/lib/stripe.ts`, `apps/api/tests/runtimeConfig.test.ts`
 - id: ACQ-AUTO-016
   priority: P1
   status: TODO

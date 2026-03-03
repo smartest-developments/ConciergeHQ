@@ -1,7 +1,15 @@
 import { createServer } from './server.js';
+import { getServerConfig, validateStartupConfig } from './lib/runtimeConfig.js';
 
-const port = Number(process.env.PORT ?? 3001);
-const host = '0.0.0.0';
+try {
+  validateStartupConfig();
+} catch (error) {
+  const message = error instanceof Error ? error.message : 'Unknown startup configuration error';
+  console.error(message);
+  process.exit(1);
+}
+
+const { port, host } = getServerConfig();
 
 const app = createServer();
 

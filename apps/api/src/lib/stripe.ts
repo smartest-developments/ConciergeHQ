@@ -16,5 +16,18 @@ export function getStripeClient(): Stripe {
 }
 
 export function getWebBaseUrl(): string {
-  return process.env.WEB_BASE_URL ?? 'http://localhost:5173';
+  const value = process.env.WEB_BASE_URL ?? 'http://localhost:5173';
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error('WEB_BASE_URL must use http or https');
+    }
+
+    return url.origin;
+  } catch (error) {
+    throw new Error(
+      `WEB_BASE_URL is invalid: ${error instanceof Error ? error.message : 'Unable to parse URL'}`
+    );
+  }
 }

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) {
     return fallback;
@@ -52,6 +54,47 @@ export type CorsConfig = {
   allowedOrigins: string[];
 };
 
+export type ServerConfig = {
+  host: string;
+  port: number;
+};
+
+const nodeEnvSchema = z.enum(['development', 'test', 'production']);
+
+const startupConfigSchema = z
+  .object({
+    NODE_ENV: nodeEnvSchema.optional(),
+    PORT: z.coerce.number().int().min(1).max(65535).optional(),
+    DATABASE_URL: z.string().min(1),
+    STRIPE_SECRET_KEY: z.string().min(1),
+    WEB_BASE_URL: z
+      .string()
+      .url()
+      .refine((value) => {
+        const protocol = new URL(value).protocol;
+        return protocol === 'http:' || protocol === 'https:';
+      }, 'WEB_BASE_URL must use http or https'),
+    CORS_ALLOWED_ORIGINS: z.string().optional(),
+    RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().positive().optional(),
+    RATE_LIMIT_CREATE_MAX_REQUESTS: z.coerce.number().int().positive().optional(),
+    RATE_LIMIT_PAYMENT_MAX_REQUESTS: z.coerce.number().int().positive().optional(),
+    RATE_LIMIT_PROPOSAL_MAX_REQUESTS: z.coerce.number().int().positive().optional()
+  })
+  .superRefine((config, ctx) => {
+    const configuredOrigins = parseOriginList(config.CORS_ALLOWED_ORIGINS);
+    const rawOriginCount = config.CORS_ALLOWED_ORIGINS
+      ? config.CORS_ALLOWED_ORIGINS.split(',').filter((entry) => entry.trim().length > 0).length
+      : 0;
+
+    if (configuredOrigins.length !== rawOriginCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CORS_ALLOWED_ORIGINS'],
+        message: 'CORS_ALLOWED_ORIGINS must contain only absolute origins'
+      });
+    }
+  });
+
 export function getRateLimitConfig(): RateLimitConfig {
   const windowMinutes = parsePositiveInt(process.env.RATE_LIMIT_WINDOW_MINUTES, 10);
 
@@ -87,5 +130,31 @@ export function getCorsConfig(): CorsConfig {
   return {
     allowAllOrigins: false,
     allowedOrigins: Array.from(allowedOrigins)
+  };
+}
+
+export function validateStartupConfig(env: NodeJS.ProcessEnv = process.env): void {
+  const parsed = startupConfigSchema.safeParse(env);
+
+  if (parsed.success) {
+    return;
+  }
+
+  const issueList = parsed.error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join('.') : 'env';
+      return `${path}: ${issue.message}`;
+    })
+    .join('; ');
+
+  throw new Error(`Invalid runtime configuration: ${issueList}`);
+}
+
+export function getServerConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
+  const parsedPort = parsePositiveInt(env.PORT, 3001);
+
+  return {
+    host: '0.0.0.0',
+    port: parsedPort
   };
 }
