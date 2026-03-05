@@ -1,39 +1,74 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from '../src/pages/DashboardPage';
-
-const { fetchRequestsMock } = vi.hoisted(() => ({
-  fetchRequestsMock: vi.fn()
-}));
+import { fetchRequests } from '../src/api';
 
 vi.mock('../src/api', () => ({
-  fetchRequests: fetchRequestsMock
+  fetchRequests: vi.fn()
 }));
 
-describe('DashboardPage payment notices', () => {
-  beforeEach(() => {
-    const storage = new Map<string, string>();
-    const localStorageMock = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      },
-      removeItem: (key: string) => {
-        storage.delete(key);
-      }
-    };
+const mockedFetchRequests = vi.mocked(fetchRequests);
 
-    Object.defineProperty(globalThis, 'localStorage', {
-      value: localStorageMock,
-      configurable: true
+describe('DashboardPage', () => {
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          store.set(key, value);
+        },
+        removeItem: (key: string) => {
+          store.delete(key);
+        },
+        clear: () => {
+          store.clear();
+        }
+      }
+    });
+    mockedFetchRequests.mockReset();
+  });
+
+  it('shows retry guidance for unpaid requests', async () => {
+    mockedFetchRequests.mockResolvedValue({
+      requests: [
+        {
+          id: 42,
+          status: 'FEE_PENDING',
+          userEmail: 'buyer@example.com',
+          budgetChf: 1800,
+          sourcingFeeChf: 180,
+          category: 'SPORTS_EQUIPMENT',
+          country: 'CH',
+          condition: 'USED',
+          urgency: 'FAST',
+          createdAt: '2026-02-26T08:00:00.000Z',
+          feePaidAt: null,
+          proposal: null
+        }
+      ]
     });
 
-    fetchRequestsMock.mockResolvedValue({ requests: [] });
+    render(
+      <MemoryRouter initialEntries={['/dashboard?email=buyer@example.com']}>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Awaiting fee payment.')).toBeTruthy();
+    });
+
+    expect(screen.getByRole('link', { name: 'Retry payment checkout' }).getAttribute('href')).toBe(
+      '/payment/42?fee=180'
+    );
   });
 
-  it('renders cancelled checkout notice from persisted payment state', async () => {
-    localStorage.setItem('acq_payment_notice', JSON.stringify({ type: 'cancelled', requestId: 42 }));
+  it('renders persisted payment cancellation notice once', async () => {
+    mockedFetchRequests.mockResolvedValue({ requests: [] });
+    window.localStorage.setItem('acq_payment_notice', JSON.stringify({ type: 'cancelled', requestId: 42 }));
 
     render(
       <MemoryRouter>
@@ -41,20 +76,12 @@ describe('DashboardPage payment notices', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText(/Payment checkout was cancelled for request #42/i)).toBeTruthy();
-    expect(localStorage.getItem('acq_payment_notice')).toBeNull();
-  });
+    await waitFor(() => {
+      expect(
+        screen.getByText('Payment checkout was cancelled for request #42. You can retry below.')
+      ).toBeTruthy();
+    });
 
-  it('renders failed payment notice from persisted payment state', async () => {
-    localStorage.setItem('acq_payment_notice', JSON.stringify({ type: 'failed', requestId: 99 }));
-
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>
-    );
-
-    expect(await screen.findByText(/Payment failed for request #99/i)).toBeTruthy();
-    expect(localStorage.getItem('acq_payment_notice')).toBeNull();
+    expect(window.localStorage.getItem('acq_payment_notice')).toBeNull();
   });
 });

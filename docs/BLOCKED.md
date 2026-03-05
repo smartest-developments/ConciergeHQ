@@ -1,10 +1,16 @@
-# BLOCKED
+# BLOCKED (2026-03-05)
 
-## 2026-03-05T17:07:00+0100
+## Scope
+Automation run for task planning updates is partially blocked by filesystem policy.
 
-- Blocker: sandbox denies write operations under `plan/` (e.g. `plan/TASK_BACKLOG.md`, `plan/PROGRESS_LOG.md`) with `operation not permitted`.
-- Impact: backlog/progress auto-updates for `ACQ-AUTO-005` could not be persisted in this run.
-- Completed despite blocker: UI/payment notice increment implemented and validated (`lint`, `typecheck`, `test`, `build` all green).
-- Pending once write access is restored:
-  - Mark `ACQ-AUTO-005` as `DONE` in `plan/TASK_BACKLOG.md`.
-  - Append this run summary in `plan/PROGRESS_LOG.md`.
+## Blocker
+- Writing files under `/plan` is denied in this environment (`operation not permitted`), including:
+  - `plan/TASK_BACKLOG.md`
+  - `plan/PROGRESS_LOG.md`
+
+## Impact
+- Implemented UI/test increment completed in code (`dashboard payment-state messaging`) and quality gates are green.
+- Mandatory backlog/progress updates could not be persisted in-repo during this run.
+
+## Next step
+Run with write access to `/plan` so backlog/progress updates can be committed together with the code increment.
