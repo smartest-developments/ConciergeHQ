@@ -158,9 +158,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/jobs/proposalExpiry.ts`
 - id: ACQ-AUTO-014
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add env-driven CORS allow-list and disable permissive wildcard behavior for production deployments.
-  Evidence: `apps/api/src/server.ts`, `docs/SECURITY.md`
+  Evidence: `apps/api/src/server.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/tests/runtime-config.test.ts`, `.env.example`, `docs/SECURITY.md`
 - id: ACQ-AUTO-015
   priority: P1
   status: TODO

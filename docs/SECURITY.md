@@ -15,6 +15,7 @@
   - `POST /api/requests/:id/confirm-payment`: default 20 requests / 10 minutes.
   - `POST /api/requests/:id/proposals`: default 20 requests / 10 minutes.
 - Rate-limited routes expose `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`; blocked requests also return `Retry-After`.
+- CORS is restricted by env allow-list (`CORS_ALLOWED_ORIGINS`) with local defaults (`http://localhost:5173,http://127.0.0.1:5173`); permissive wildcard behavior is disabled.
 - Planned: global cap for unauthenticated routes.
 
 ## Data protection
@@ -29,5 +30,4 @@
 
 ## Operational hardening backlog
 - Add CSRF protections when cookie sessions are introduced.
-- Add origin allow-list for CORS in production.
 - Add secret scanning and dependency vulnerability checks in CI.
