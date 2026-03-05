@@ -2,34 +2,61 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { fetchRequests } from '../api';
 
+const PAYMENT_NOTICE_STORAGE_KEY = 'acq_payment_notice';
+
+type PaymentNotice = {
+  type: 'cancelled' | 'failed';
+  requestId: number | null;
+};
+
+type DashboardRecord = {
+  id: number;
+  status: string;
+  userEmail: string;
+  budgetChf: number;
+  sourcingFeeChf: number;
+  category: string;
+  country: string;
+  condition: string;
+  urgency: string;
+  createdAt: string;
+  feePaidAt: string | null;
+  proposal: {
+    id: number;
+    merchantName: string;
+    externalUrl: string;
+    summary: string | null;
+    publishedAt: string;
+    expiresAt: string;
+  } | null;
+};
+
+function renderPaymentState(record: DashboardRecord) {
+  if (record.feePaidAt) {
+    return `Paid on ${new Date(record.feePaidAt).toLocaleString()}`;
+  }
+
+  if (record.status === 'FEE_PENDING') {
+    return (
+      <div className="proposal-cell">
+        <span className="warning">Awaiting fee payment.</span>
+        <a href={`/payment/${record.id}?fee=${record.sourcingFeeChf}`}>Retry payment checkout</a>
+      </div>
+    );
+  }
+
+  return 'Not paid yet';
+}
+
 export function DashboardPage() {
   const [searchParams] = useSearchParams();
   const queryEmail = searchParams.get('email')?.trim();
   const initialEmail = queryEmail || localStorage.getItem('acq_user_email') || 'demo@acquisitionconcierge.ch';
 
   const [email, setEmail] = useState(initialEmail);
-  const [records, setRecords] = useState<Array<{
-    id: number;
-    status: string;
-    userEmail: string;
-    budgetChf: number;
-    sourcingFeeChf: number;
-    category: string;
-    country: string;
-    condition: string;
-    urgency: string;
-    createdAt: string;
-    feePaidAt: string | null;
-    proposal: {
-      id: number;
-      merchantName: string;
-      externalUrl: string;
-      summary: string | null;
-      publishedAt: string;
-      expiresAt: string;
-    } | null;
-  }>>([]);
+  const [records, setRecords] = useState<DashboardRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
   const hasProposalNotice = records.some((record) => record.proposal !== null);
 
   async function load(targetEmail: string) {
@@ -45,6 +72,19 @@ export function DashboardPage() {
   useEffect(() => {
     localStorage.setItem('acq_user_email', initialEmail);
     void load(initialEmail);
+
+    const rawPaymentNotice = localStorage.getItem(PAYMENT_NOTICE_STORAGE_KEY);
+    if (rawPaymentNotice) {
+      try {
+        const parsed = JSON.parse(rawPaymentNotice) as PaymentNotice;
+        if (parsed.type === 'cancelled' || parsed.type === 'failed') {
+          setPaymentNotice(parsed);
+        }
+      } catch {
+        // Ignore malformed persisted notices.
+      }
+      localStorage.removeItem(PAYMENT_NOTICE_STORAGE_KEY);
+    }
   }, []);
 
   async function onFilter(event: FormEvent) {
@@ -65,6 +105,13 @@ export function DashboardPage() {
       </form>
 
       {error ? <p className="error">{error}</p> : null}
+      {paymentNotice ? (
+        <p className={paymentNotice.type === 'failed' ? 'error' : 'warning'}>
+          {paymentNotice.type === 'failed'
+            ? `Payment failed for request #${paymentNotice.requestId ?? 'unknown'}. No charge was captured.`
+            : `Payment checkout was cancelled for request #${paymentNotice.requestId ?? 'unknown'}. You can retry below.`}
+        </p>
+      ) : null}
 
       <div className="card">
         <table>
@@ -75,6 +122,7 @@ export function DashboardPage() {
               <th>Category</th>
               <th>Budget</th>
               <th>Fee</th>
+              <th>Payment</th>
               <th>Country</th>
               <th>Created</th>
               <th>Proposal</th>
@@ -88,6 +136,7 @@ export function DashboardPage() {
                 <td>{record.category}</td>
                 <td>{record.budgetChf} CHF</td>
                 <td>{record.sourcingFeeChf} CHF</td>
+                <td>{renderPaymentState(record)}</td>
                 <td>{record.country}</td>
                 <td>{new Date(record.createdAt).toLocaleString()}</td>
                 <td>
@@ -106,7 +155,7 @@ export function DashboardPage() {
             ))}
             {records.length === 0 ? (
               <tr>
-                <td colSpan={8}>No requests found.</td>
+                <td colSpan={9}>No requests found.</td>
               </tr>
             ) : null}
           </tbody>

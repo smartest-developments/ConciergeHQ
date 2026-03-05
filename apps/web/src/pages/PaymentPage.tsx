@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createCheckoutSession } from '../api';
+
+const PAYMENT_NOTICE_STORAGE_KEY = 'acq_payment_notice';
 
 export function PaymentPage() {
   const { requestId } = useParams<{ requestId: string }>();
@@ -11,6 +13,20 @@ export function PaymentPage() {
   const fee = searchParams.get('fee') ?? '0';
   const cancelled = searchParams.get('cancelled') === 'true';
   const parsedRequestId = Number(requestId);
+
+  useEffect(() => {
+    if (!cancelled) {
+      return;
+    }
+
+    localStorage.setItem(
+      PAYMENT_NOTICE_STORAGE_KEY,
+      JSON.stringify({
+        type: 'cancelled',
+        requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null
+      })
+    );
+  }, [cancelled, parsedRequestId]);
 
   async function beginCheckout() {
     setError(null);
@@ -23,6 +39,13 @@ export function PaymentPage() {
       }
       window.location.assign(session.checkoutUrl);
     } catch (paymentError) {
+      localStorage.setItem(
+        PAYMENT_NOTICE_STORAGE_KEY,
+        JSON.stringify({
+          type: 'failed',
+          requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null
+        })
+      );
       setError(paymentError instanceof Error ? paymentError.message : 'Unable to start payment');
     } finally {
       setLoading(false);
