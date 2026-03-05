@@ -1,6 +1,6 @@
 # TASK_BACKLOG
 
-Last reviewed: **2026-03-05**
+Last reviewed: **2026-03-06**
 
 Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discovery and enforce `P0 <= 7` items.
 
@@ -176,6 +176,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add API integration tests for checkout/payment/proposal routes, including 429 headers and unhappy-path validations.
   Evidence: `apps/api/tests`
+- id: ACQ-AUTO-018
+  priority: P1
+  status: TODO
+  DoD: Add operator queue sort controls (`createdAt`, `budgetChf`) and persist filter state in URL query params for shareable triage links.
+  Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/tests/operator-queue-page.test.tsx`
 
 ## AUTH_ADMIN_ESSENTIALS
 - id: ACQ-AUTH-001
@@ -205,7 +210,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
 - id: ACQ-ADMIN-001
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Deliver operator queue triage capability across UI and API (`ACQ-ADMIN-001A..C`) with auth hardening tracked under `ACQ-AUTH-001`.
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`
 - id: ACQ-ADMIN-001A
@@ -220,9 +225,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-001C
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Bind operator queue UI to API-backed filtering and pagination controls (including date range) once `ACQ-ADMIN-001B` is available.
-  Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/tests`, `docs/PRD.md`
+  Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-queue-page.test.tsx`
 - id: ACQ-ADMIN-002
   priority: P1
   status: TODO

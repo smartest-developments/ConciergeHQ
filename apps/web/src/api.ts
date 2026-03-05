@@ -59,8 +59,29 @@ export async function confirmPayment(requestId: number, sessionId: string) {
   return response.json() as Promise<{ id: number; status: string; feePaidAt: string }>;
 }
 
-export async function fetchRequests(email?: string) {
-  const query = email ? `?email=${encodeURIComponent(email)}` : '';
+export type FetchRequestsParams = {
+  email?: string;
+  status?: string;
+  category?: string;
+  country?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function fetchRequests(params?: string | FetchRequestsParams) {
+  const queryParams = new URLSearchParams();
+  if (typeof params === 'string') {
+    if (params) queryParams.set('email', params);
+  } else if (params) {
+    const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+    for (const [key, value] of entries) {
+      queryParams.set(key, String(value));
+    }
+  }
+
+  const query = queryParams.size > 0 ? `?${queryParams.toString()}` : '';
   const response = await fetch(`${API_BASE_URL}/api/requests${query}`);
   if (!response.ok) throw new Error('Failed to fetch requests');
   return response.json() as Promise<{
@@ -85,5 +106,11 @@ export async function fetchRequests(email?: string) {
         expiresAt: string;
       } | null;
     }>;
+    pagination?: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
   }>;
 }

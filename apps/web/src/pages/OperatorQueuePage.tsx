@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { fetchRequests } from '../api';
 
 type QueueRecord = {
@@ -22,43 +22,54 @@ export function OperatorQueuePage() {
   const [statusFilter, setStatusFilter] = useState<FilterValue>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<FilterValue>('ALL');
   const [countryFilter, setCountryFilter] = useState<FilterValue>('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setError(null);
-        const response = await fetchRequests();
-        setRecords(response.requests);
-      } catch {
-        setError('Could not load operator queue.');
-      }
+  async function load(nextPage: number) {
+    try {
+      setError(null);
+      const response = await fetchRequests({
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        category: categoryFilter === 'ALL' ? undefined : categoryFilter,
+        country: countryFilter === 'ALL' ? undefined : countryFilter,
+        dateFrom: dateFrom ? new Date(`${dateFrom}T00:00:00.000Z`).toISOString() : undefined,
+        dateTo: dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : undefined,
+        page: nextPage,
+        pageSize
+      });
+      setRecords(response.requests);
+      setPage(response.pagination?.page ?? nextPage);
+      setTotal(response.pagination?.total ?? response.requests.length);
+      setTotalPages(Math.max(response.pagination?.totalPages ?? 1, 1));
+    } catch {
+      setError('Could not load operator queue.');
     }
+  }
 
-    void load();
+  useEffect(() => {
+    void load(1);
   }, []);
-
-  const filteredRecords = useMemo(
-    () =>
-      records.filter((record) => {
-        const statusMatch = statusFilter === 'ALL' || record.status === statusFilter;
-        const categoryMatch = categoryFilter === 'ALL' || record.category === categoryFilter;
-        const countryMatch = countryFilter === 'ALL' || record.country === countryFilter;
-        return statusMatch && categoryMatch && countryMatch;
-      }),
-    [records, statusFilter, categoryFilter, countryFilter]
-  );
 
   const statusOptions = useMemo(() => getFilterOptions(records, 'status'), [records]);
   const categoryOptions = useMemo(() => getFilterOptions(records, 'category'), [records]);
   const countryOptions = useMemo(() => getFilterOptions(records, 'country'), [records]);
+
+  async function onApplyFilters(event: FormEvent) {
+    event.preventDefault();
+    await load(1);
+  }
 
   return (
     <section>
       <h2>Operator Queue</h2>
       <p>Filter incoming requests for manual triage. Admin authentication is planned in ACQ-AUTH-001.</p>
 
-      <div className="card form-grid">
+      <form className="card form-grid" onSubmit={onApplyFilters}>
         <label>
           Status
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
@@ -94,12 +105,26 @@ export function OperatorQueuePage() {
             ))}
           </select>
         </label>
-      </div>
+
+        <label>
+          Date from
+          <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+        </label>
+
+        <label>
+          Date to
+          <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+        </label>
+
+        <button type="submit">Apply filters</button>
+      </form>
 
       {error ? <p className="error">{error}</p> : null}
 
       <div className="card">
-        <p className="queue-summary">Visible requests: {filteredRecords.length}</p>
+        <p className="queue-summary">
+          Visible requests: {records.length} (total matching: {total})
+        </p>
         <table>
           <thead>
             <tr>
@@ -113,7 +138,7 @@ export function OperatorQueuePage() {
             </tr>
           </thead>
           <tbody>
-            {filteredRecords.map((record) => (
+            {records.map((record) => (
               <tr key={record.id}>
                 <td>{record.id}</td>
                 <td>{record.userEmail}</td>
@@ -124,13 +149,24 @@ export function OperatorQueuePage() {
                 <td>{new Date(record.createdAt).toLocaleString()}</td>
               </tr>
             ))}
-            {filteredRecords.length === 0 ? (
+            {records.length === 0 ? (
               <tr>
                 <td colSpan={7}>No requests match the selected filters.</td>
               </tr>
             ) : null}
           </tbody>
         </table>
+        <div className="inline-form">
+          <button type="button" onClick={() => void load(page - 1)} disabled={page <= 1}>
+            Previous
+          </button>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <button type="button" onClick={() => void load(page + 1)} disabled={page >= totalPages}>
+            Next
+          </button>
+        </div>
       </div>
     </section>
   );
