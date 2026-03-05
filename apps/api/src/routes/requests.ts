@@ -17,9 +17,26 @@ const createRequestSchema = z.object({
   urgency: z.enum(['STANDARD', 'FAST', 'CRITICAL'])
 });
 
-const listRequestsQuerySchema = z.object({
-  email: z.string().email().optional()
-});
+const listRequestsQuerySchema = z
+  .object({
+    email: z.string().email().optional(),
+    status: z.nativeEnum(RequestStatus).optional(),
+    category: z.enum(allowedCategories).optional(),
+    country: z.enum(allowedCountries).optional(),
+    dateFrom: z.coerce.date().optional(),
+    dateTo: z.coerce.date().optional(),
+    page: z.coerce.number().int().positive().default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20)
+  })
+  .superRefine((value, ctx) => {
+    if (value.dateFrom && value.dateTo && value.dateFrom > value.dateTo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['dateTo'],
+        message: 'dateTo must be greater than or equal to dateFrom'
+      });
+    }
+  });
 
 const requestParamsSchema = z.object({
   id: z.coerce.number().int().positive()
@@ -143,17 +160,38 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       });
     }
 
-    const requests = await app.prisma.sourcingRequest.findMany({
-      where: parsed.data.email ? { user: { email: parsed.data.email } } : undefined,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { email: true } },
-        proposals: {
-          orderBy: { publishedAt: 'desc' },
-          take: 1
+    const createdAt =
+      parsed.data.dateFrom || parsed.data.dateTo
+        ? {
+            ...(parsed.data.dateFrom ? { gte: parsed.data.dateFrom } : {}),
+            ...(parsed.data.dateTo ? { lte: parsed.data.dateTo } : {})
+          }
+        : undefined;
+    const where = {
+      ...(parsed.data.email ? { user: { email: parsed.data.email } } : {}),
+      ...(parsed.data.status ? { status: parsed.data.status } : {}),
+      ...(parsed.data.category ? { category: parsed.data.category } : {}),
+      ...(parsed.data.country ? { country: parsed.data.country } : {}),
+      ...(createdAt ? { createdAt } : {})
+    };
+    const offset = (parsed.data.page - 1) * parsed.data.pageSize;
+
+    const [total, requests] = await Promise.all([
+      app.prisma.sourcingRequest.count({ where }),
+      app.prisma.sourcingRequest.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: parsed.data.pageSize,
+        include: {
+          user: { select: { email: true } },
+          proposals: {
+            orderBy: { publishedAt: 'desc' },
+            take: 1
+          }
         }
-      }
-    });
+      })
+    ]);
 
     return {
       requests: requests.map((item) => {
@@ -182,7 +220,13 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
               }
             : null
         };
-      })
+      }),
+      pagination: {
+        page: parsed.data.page,
+        pageSize: parsed.data.pageSize,
+        total,
+        totalPages: total === 0 ? 0 : Math.ceil(total / parsed.data.pageSize)
+      }
     };
   });
 

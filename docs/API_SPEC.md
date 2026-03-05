@@ -71,9 +71,18 @@ Validation notes:
 - `budgetChf` must be positive.
 - Fee formula: `max(50, budget * 0.10)`.
 
-## GET /api/requests?email=<userEmail>
-List requests. Optional `email` filter.
+## GET /api/requests
+List requests for dashboard/operator queue usage.
 Includes latest proposal details when available.
+Supports optional filters and pagination:
+- `email=<userEmail>`
+- `status=FEE_PENDING|FEE_PAID|SOURCING|PROPOSAL_PUBLISHED|PROPOSAL_EXPIRED|COMPLETED|CANCELED`
+- `category=ELECTRONICS|HOME_APPLIANCES|SPORTS_EQUIPMENT`
+- `country=<ISO2>`
+- `dateFrom=<ISO datetime>`
+- `dateTo=<ISO datetime>`
+- `page=<positive integer>` (default `1`)
+- `pageSize=<1..100>` (default `20`)
 
 Example response:
 ```json
@@ -114,9 +123,18 @@ Example response:
         "expiresAt": "2026-02-21T23:30:00.000Z"
       }
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 2,
+    "totalPages": 1
+  }
 }
 ```
+
+Validation notes:
+- `dateTo` must be greater than or equal to `dateFrom`.
 
 ## POST /api/requests/:id/checkout
 Create a PSP (Stripe Checkout) session for the sourcing fee.

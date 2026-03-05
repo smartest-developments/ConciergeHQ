@@ -168,9 +168,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/index.ts`, `apps/api/src/lib/runtimeConfig.ts`, `apps/api/tests/runtime-config.test.ts`
 - id: ACQ-AUTO-016
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add pagination controls to `GET /api/requests` and document limits in API spec.
-  Evidence: `apps/api/src/routes/requests.ts`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-AUTO-017
   priority: P1
   status: TODO
@@ -215,9 +215,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/src/router.tsx`, `apps/web/tests/operator-queue-page.test.tsx`
 - id: ACQ-ADMIN-001B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add server-side operator queue filters (`status`, `category`, `country`, `dateFrom`, `dateTo`) plus pagination contract to `GET /api/requests`.
-  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-001C
   priority: P1
   status: TODO
