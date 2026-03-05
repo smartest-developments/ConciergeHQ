@@ -12,5 +12,6 @@ describe('AppShell', () => {
     );
 
     expect(screen.getByText('Acquisition Concierge')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Operator Queue' }).getAttribute('href')).toBe('/operator/queue');
   });
 });

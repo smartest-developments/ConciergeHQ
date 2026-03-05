@@ -205,9 +205,24 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
 - id: ACQ-ADMIN-001
   priority: P1
-  status: TODO
-  DoD: Build operator queue UI with filters (status/date/country/category) and pagination for request triage.
+  status: IN_PROGRESS
+  DoD: Deliver operator queue triage capability across UI and API (`ACQ-ADMIN-001A..C`) with auth hardening tracked under `ACQ-AUTH-001`.
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`
+- id: ACQ-ADMIN-001A
+  priority: P1
+  status: DONE
+  DoD: Add operator queue UI route with status/category/country filters and request count visibility.
+  Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/src/router.tsx`, `apps/web/tests/operator-queue-page.test.tsx`
+- id: ACQ-ADMIN-001B
+  priority: P1
+  status: TODO
+  DoD: Add server-side operator queue filters (`status`, `category`, `country`, `dateFrom`, `dateTo`) plus pagination contract to `GET /api/requests`.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests`, `docs/API_SPEC.md`
+- id: ACQ-ADMIN-001C
+  priority: P1
+  status: TODO
+  DoD: Bind operator queue UI to API-backed filtering and pagination controls (including date range) once `ACQ-ADMIN-001B` is available.
+  Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/tests`, `docs/PRD.md`
 - id: ACQ-ADMIN-002
   priority: P1
   status: TODO

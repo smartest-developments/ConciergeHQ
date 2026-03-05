@@ -9,6 +9,7 @@ export function AppShell() {
         <nav>
           <NavLink to="/requests/new">New Request</NavLink>
           <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/operator/queue">Operator Queue</NavLink>
         </nav>
       </header>
       <main>

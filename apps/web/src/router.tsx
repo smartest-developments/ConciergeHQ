@@ -4,6 +4,7 @@ import { CreateRequestPage } from './pages/CreateRequestPage';
 import { PaymentPage } from './pages/PaymentPage';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { OperatorQueuePage } from './pages/OperatorQueuePage';
 
 export const router = createBrowserRouter([
   {
@@ -14,7 +15,8 @@ export const router = createBrowserRouter([
       { path: '/requests/new', element: <CreateRequestPage /> },
       { path: '/payment/:requestId', element: <PaymentPage /> },
       { path: '/payment-success', element: <PaymentSuccessPage /> },
-      { path: '/dashboard', element: <DashboardPage /> }
+      { path: '/dashboard', element: <DashboardPage /> },
+      { path: '/operator/queue', element: <OperatorQueuePage /> }
     ]
   }
 ]);
