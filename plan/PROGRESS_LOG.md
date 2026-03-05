@@ -1,6 +1,7 @@
 # PROGRESS_LOG
 
 ## 2026-03-05
+- 2026-03-05T22:05:00+0100 — ACQ-AUTO-015 Startup env validation fail-fast — Result: added startup validation for required (`STRIPE_SECRET_KEY`, `WEB_BASE_URL`) and typed rate-limit/CORS envs, wired validation in API bootstrap, and expanded runtime-config tests; also reconciled backlog status for already-shipped ACQ-AUTO-005 dashboard payment notices. — Next: ACQ-AUTO-006 operator-only auth guard for proposal publishing endpoint.
 - 2026-03-05T18:05:00+0100 — ACQ-AUTO-014 Env-driven CORS allow-list hardening — Result: replaced permissive CORS with `CORS_ALLOWED_ORIGINS` allow-list + localhost defaults, added runtime config tests, updated security/env docs, and marked backlog item done. — Next: ACQ-AUTO-015 startup env validation fail-fast.
 
 ## 2026-02-25

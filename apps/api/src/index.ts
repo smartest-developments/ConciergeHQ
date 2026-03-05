@@ -1,7 +1,10 @@
 import { createServer } from './server.js';
+import { validateStartupEnv } from './lib/runtimeConfig.js';
 
 const port = Number(process.env.PORT ?? 3001);
 const host = '0.0.0.0';
+
+validateStartupEnv();
 
 const app = createServer();
 
