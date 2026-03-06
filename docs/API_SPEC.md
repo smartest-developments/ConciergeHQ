@@ -286,3 +286,10 @@ Example response:
 Additional responses:
 - `401` with `{ "error": "AUTH_REQUIRED" }` when operator role header is missing.
 - `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when operator role is invalid.
+
+## 2026-03-06 Auth Contract Increment
+- Backend session primitives are now defined for upcoming auth APIs:
+  - session cookie name: `acq_session`
+  - persisted session lookup by `tokenHash` with expiry/revocation checks
+  - user roles normalized to `CUSTOMER|OPERATOR|ADMIN`
+- Current operator proposal publish endpoint remains backward compatible with `x-operator-role` while session route wiring is finalized in `ACQ-AUTH-001A2`.

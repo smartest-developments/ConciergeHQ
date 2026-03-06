@@ -65,13 +65,34 @@ enum RequestCountry {
   SK
 }
 
+enum UserRole {
+  CUSTOMER
+  OPERATOR
+  ADMIN
+}
+
 model User {
   id        Int              @id @default(autoincrement())
   email     String           @unique
   name      String?
+  role      UserRole         @default(CUSTOMER)
   requests  SourcingRequest[]
+  sessions  Session[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, expiresAt])
 }
 
 model SourcingRequest {

@@ -15,3 +15,8 @@ Automation run for task planning updates is partially blocked by filesystem poli
 ## Next step
 Run with write access to `/plan` so backlog/progress updates can be committed together with the code increment.
 - 2026-03-06T09:21:47+0100: automation sandbox cannot write in this repository (`Operation not permitted`), so backlog/code/doc updates were skipped this run.
+
+## 2026-03-06T11:45:00+0100 - ACQ-AUTH-001A2 route wiring blocked
+- Blocker: filesystem denied overwriting existing `apps/api/src/routes/requests.ts` (`Operation not permitted`) during session-auth integration attempt, while new-file writes succeeded.
+- Impact: completed `ACQ-AUTH-001A1` primitives, but `ACQ-AUTH-001A2` route-level cookie-session enforcement remains pending.
+- Next action: re-run with write access for existing route file and migration directory creation.

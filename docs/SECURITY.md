@@ -33,3 +33,11 @@
 ## Operational hardening backlog
 - Add CSRF protections when cookie sessions are introduced.
 - Add secret scanning and dependency vulnerability checks in CI.
+
+## 2026-03-06 Session Primitive Baseline (ACQ-AUTH-001A1)
+- Added backend session helper primitives in `apps/api/src/lib/sessionAuth.ts`:
+  - `acq_session` cookie parsing + issuance/clear header builders
+  - SHA-256 token hashing for DB lookup
+  - active-session resolver with revoked/expired filtering
+- Added role primitives in schema via `User.role` (`CUSTOMER|OPERATOR|ADMIN`) and `Session` persistence model.
+- Transitional note: proposal/status mutation routes still accept header role fallback until `ACQ-AUTH-001A2` wires full cookie-session enforcement.

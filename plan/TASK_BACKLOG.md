@@ -24,8 +24,8 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## INDISPENSABLE_TODO
 - item: MUST-01
   priority: P0
-  status: TODO
-  Scope: `ACQ-AUTH-001`, `ACQ-AUTO-006`, `ACQ-AUTO-013`
+  status: IN_PROGRESS
+  Scope: `ACQ-AUTH-001`
   Exit: Auth + RBAC enforcement and complete/race-safe status transitions validated in staging.
 - item: MUST-02
   priority: P0
@@ -153,9 +153,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/STATE_MACHINE.md`, `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`
 - id: ACQ-AUTO-013
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Make proposal expiry processing race-safe across multiple API instances and prevent duplicate `PROPOSAL_EXPIRED` events.
-  Evidence: `apps/api/src/jobs/proposalExpiry.ts`
+  Evidence: `apps/api/src/jobs/proposalExpiry.ts`, `apps/api/tests/proposal-expiry-job.test.ts`
 - id: ACQ-AUTO-014
   priority: P1
   status: DONE
@@ -381,3 +381,20 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: BLOCKED
   DoD: Mobile native app parity.
   Evidence: Parked until web product-market fit and funnel metrics stabilize.
+
+## AUTO_SPLIT_2026-03-06_ACQ-AUTH-001A
+- id: ACQ-AUTH-001A
+  priority: P0
+  status: IN_PROGRESS
+  DoD: Backend session primitives delivered in incremental slices to keep each run 1-3h and avoid monolithic auth rollout risk.
+  Evidence: `apps/api/src/lib/sessionAuth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/session-auth.test.ts`, `apps/api/tests/operator-role.test.ts`
+- id: ACQ-AUTH-001A1
+  priority: P0
+  status: DONE
+  DoD: Introduce session token/cookie/hash helpers and DB session/user-role schema primitives with focused unit tests.
+  Evidence: `apps/api/src/lib/sessionAuth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/session-auth.test.ts`
+- id: ACQ-AUTH-001A2
+  priority: P0
+  status: TODO
+  DoD: Wire proposal/status mutation routes to cookie-session role extraction and remove header-auth fallback once login API exists.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
