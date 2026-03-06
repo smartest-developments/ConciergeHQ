@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { resetPassword } from '../api';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -8,8 +9,9 @@ export function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
 
     if (!token) {
@@ -30,8 +32,21 @@ export function ResetPasswordPage() {
       return;
     }
 
+    setSubmitting(true);
     setError(null);
-    setStatus('Password reset submitted. You can now sign in with the new password once API endpoints are connected.');
+    setStatus(null);
+    try {
+      await resetPassword(token, password);
+      setStatus('Password reset successful. You can now sign in with your new password.');
+    } catch (requestError) {
+      if (requestError instanceof Error && requestError.message === 'INVALID_RESET_TOKEN') {
+        setError('Reset token is missing, expired, or invalid.');
+      } else {
+        setError('Unable to reset password. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -54,7 +69,9 @@ export function ResetPasswordPage() {
           />
         </label>
         {error ? <p className="error">{error}</p> : null}
-        <button type="submit">Reset password</button>
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Resetting...' : 'Reset password'}
+        </button>
       </form>
 
       {status ? <p className="card">{status}</p> : null}

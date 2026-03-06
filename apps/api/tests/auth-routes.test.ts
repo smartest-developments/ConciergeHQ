@@ -25,6 +25,12 @@ const makePrismaMock = () =>
       create: vi.fn(),
       update: vi.fn()
     },
+    passwordResetToken: {
+      updateMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn()
+    },
     session: {
       findUnique: vi.fn(),
       updateMany: vi.fn(),
@@ -317,4 +323,117 @@ describe('auth routes', () => {
     expect(response.headers['set-cookie']).toContain('Max-Age=0')
     await app.close()
   })
+
+  it('returns deterministic forgot-password response even when user does not exist', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue(null)
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/forgot-password',
+      payload: {
+        email: 'missing@example.com'
+      }
+    })
+
+    expect(response.statusCode).toBe(202)
+    expect(response.json()).toEqual({ status: 'RESET_LINK_ENQUEUED' })
+    expect(prisma.passwordResetToken.create).not.toHaveBeenCalled()
+    await app.close()
+  })
+
+  it('creates expiring password reset token for existing credential user', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue({
+      id: 21,
+      credential: {
+        id: 61
+      }
+    })
+    prisma.$transaction.mockImplementation(async (handler: any) =>
+      handler({
+        passwordResetToken: {
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+          create: vi.fn().mockResolvedValue({ id: 91 })
+        }
+      })
+    )
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/forgot-password',
+      payload: {
+        email: 'buyer@example.com'
+      }
+    })
+
+    expect(response.statusCode).toBe(202)
+    expect(prisma.$transaction).toHaveBeenCalledOnce()
+    await app.close()
+  }, 15_000)
+
+  it('returns invalid reset token for unknown token hash', async () => {
+    const prisma = makePrismaMock()
+    prisma.passwordResetToken.findUnique.mockResolvedValue(null)
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/reset-password',
+      payload: {
+        token: '12345678901234567890123456789012',
+        password: 'N3wPassw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toEqual({ error: 'INVALID_RESET_TOKEN' })
+    await app.close()
+  }, 15_000)
+
+  it('resets password, consumes token, and revokes active sessions', async () => {
+    const prisma = makePrismaMock()
+
+    prisma.passwordResetToken.findUnique.mockResolvedValue({
+      id: 91,
+      consumedAt: null,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      user: {
+        id: 21,
+        credential: {
+          id: 61
+        }
+      }
+    })
+    prisma.$transaction.mockImplementation(async (handler: any) =>
+      handler({
+        userCredential: {
+          update: vi.fn().mockResolvedValue({ id: 61 })
+        },
+        passwordResetToken: {
+          update: vi.fn().mockResolvedValue({ id: 91 })
+        },
+        session: {
+          updateMany: vi.fn().mockResolvedValue({ count: 2 })
+        }
+      })
+    )
+
+    const app = createServer(prisma as never)
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/reset-password',
+      payload: {
+        token: '12345678901234567890123456789012',
+        password: 'N3wPassw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ status: 'PASSWORD_RESET_SUCCESS' })
+    expect(prisma.$transaction).toHaveBeenCalledOnce()
+    await app.close()
+  }, 15_000)
 })

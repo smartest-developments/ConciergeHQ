@@ -1,15 +1,23 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ForgotPasswordPage } from '../src/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '../src/pages/ResetPasswordPage';
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe('Forgot/Reset auth pages', () => {
-  it('shows a deterministic recovery confirmation on forgot-password submit', () => {
+  beforeEach(() => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: 'ok' })
+    } as Response);
+  });
+
+  it('shows a deterministic recovery confirmation on forgot-password submit', async () => {
     render(
       <MemoryRouter initialEntries={['/auth/forgot']}>
         <Routes>
@@ -21,7 +29,7 @@ describe('Forgot/Reset auth pages', () => {
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'customer@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
-    expect(screen.getByText('If this email exists, a reset link will be sent.')).toBeTruthy();
+    expect(await screen.findByText('If this email exists, a reset link will be sent.')).toBeTruthy();
   });
 
   it('validates reset-token presence before accepting password reset', () => {
@@ -40,9 +48,9 @@ describe('Forgot/Reset auth pages', () => {
     expect(screen.getByText('Reset token is missing or invalid.')).toBeTruthy();
   });
 
-  it('accepts valid reset-token and matching password fields', () => {
+  it('accepts valid reset-token and matching password fields', async () => {
     render(
-      <MemoryRouter initialEntries={['/auth/reset?token=test-token']}>
+      <MemoryRouter initialEntries={['/auth/reset?token=12345678901234567890123456789012']}>
         <Routes>
           <Route path="/auth/reset" element={<ResetPasswordPage />} />
         </Routes>
@@ -53,8 +61,6 @@ describe('Forgot/Reset auth pages', () => {
     fireEvent.change(screen.getByLabelText('Confirm New Password'), { target: { value: 'strong-pass' } });
     fireEvent.click(screen.getByRole('button', { name: 'Reset password' }));
 
-    expect(
-      screen.getByText('Password reset submitted. You can now sign in with the new password once API endpoints are connected.')
-    ).toBeTruthy();
+    expect(await screen.findByText('Password reset successful. You can now sign in with your new password.')).toBeTruthy();
   });
 });

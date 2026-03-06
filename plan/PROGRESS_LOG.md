@@ -1,6 +1,7 @@
 # PROGRESS_LOG
 
 ## 2026-03-06
+- 2026-03-06T23:52:00+0100 — ACQ-AUTH-003 password recovery API + UI wiring — Result: added `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` with expiring single-use token persistence (`PasswordResetToken` schema + migration), anti-enumeration response contract, password hash rotation, and full-session revocation on successful reset. Wired forgot/reset UI pages to live APIs, added API/web test coverage, and updated auth/security API docs. Backlog maintenance: marked `ACQ-AUTH-003` DONE with refreshed evidence. — Next: ACQ-AUTH-001A3 remove temporary operator-role header fallback and enforce session-only operator/admin auth.
 - 2026-03-06T21:55:21+0100 — ACQ-AUTO-017 checkout/payment/proposal unhappy-path gate recovery — Result: moved payment/proposal rate-limit checks from route `preHandler` wiring to explicit first-line handler guards in `apps/api/src/routes/requests.ts`, eliminating hanging `app.inject()` flows and restoring deterministic responses (`404/429/400/401`) for checkout, confirm-payment, and proposal unhappy paths. Verified full green gates: `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`. Backlog maintenance: marked `ACQ-AUTO-017` DONE with updated evidence. — Next: ACQ-AUTH-003 password recovery API flow.
 
 ## 2026-03-06

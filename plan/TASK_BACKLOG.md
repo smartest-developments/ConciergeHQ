@@ -210,9 +210,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-AUTH-003
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Implement password recovery flow (request reset token + reset password endpoint) with expiring single-use tokens.
-  Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/auth-routes.test.ts`, `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-AUTH-004
   priority: P1
   status: IN_PROGRESS

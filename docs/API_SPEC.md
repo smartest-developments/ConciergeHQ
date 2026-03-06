@@ -364,3 +364,42 @@ Responses:
 Behavior:
 - If a session token is present, matching non-revoked DB session is revoked (`revokedAt=now`).
 - Endpoint still returns `204` when no session cookie is present.
+
+## POST /api/auth/forgot-password
+Request password recovery for an account.
+
+Example request:
+```json
+{
+  "email": "buyer@example.com"
+}
+```
+
+Responses:
+- `202` with `{ "status": "RESET_LINK_ENQUEUED" }` for deterministic anti-enumeration behavior.
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when payload is invalid.
+
+Behavior:
+- For existing credential users, server issues one expiring reset token (30 minutes) and marks previous active reset tokens as consumed.
+- Response is intentionally identical for unknown emails.
+
+## POST /api/auth/reset-password
+Reset password with a single-use token.
+
+Example request:
+```json
+{
+  "token": "0123456789abcdef0123456789abcdef",
+  "password": "N3wPassw0rd!"
+}
+```
+
+Responses:
+- `200` with `{ "status": "PASSWORD_RESET_SUCCESS" }`.
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when payload is invalid.
+- `400` with `{ "error": "INVALID_RESET_TOKEN" }` when token is missing, expired, consumed, or unknown.
+
+Behavior:
+- Password is updated with salted scrypt hash.
+- Reset token is consumed atomically on success.
+- All active sessions for the user are revoked after password reset.

@@ -47,3 +47,8 @@
 - `POST /api/auth/register` now hashes password with salted scrypt and immediately issues an HTTP-only `acq_session` cookie.
 - `POST /api/auth/login` now enforces deterministic brute-force lockout (5 failed attempts -> 15 minute lock, `429 AUTH_LOCKED` + `Retry-After`).
 - Successful login resets failed-attempt counters and creates a fresh server-side session row.
+
+## 2026-03-06 Password Recovery Increment (ACQ-AUTH-003)
+- Added `PasswordResetToken` persistence with SHA-256 token hash, 30-minute expiry, single-use `consumedAt`, and requesting IP metadata.
+- `POST /api/auth/forgot-password` now returns deterministic `202 RESET_LINK_ENQUEUED` for both known and unknown emails (anti-enumeration).
+- `POST /api/auth/reset-password` now validates single-use expiring tokens, rotates password hash, resets credential lock counters, and revokes all active sessions for the account.
