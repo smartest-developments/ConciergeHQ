@@ -10,6 +10,7 @@ export type SessionRole = 'CUSTOMER' | 'OPERATOR' | 'ADMIN';
 export type SessionIdentity = {
   sessionId: number;
   userId: number;
+  email: string;
   role: SessionRole;
 };
 
@@ -85,6 +86,7 @@ export async function resolveSessionIdentity(
             user: {
               select: {
                 id: true;
+                email: true;
                 role: true;
               };
             };
@@ -93,7 +95,7 @@ export async function resolveSessionIdentity(
           id: number;
           revokedAt: Date | null;
           expiresAt: Date;
-          user: { id: number; role: string };
+          user: { id: number; email: string; role: string };
         } | null>;
       };
     }
@@ -103,6 +105,7 @@ export async function resolveSessionIdentity(
       user: {
         select: {
           id: true,
+          email: true,
           role: true
         }
       }
@@ -116,6 +119,7 @@ export async function resolveSessionIdentity(
   return {
     sessionId: session.id,
     userId: session.user.id,
+    email: session.user.email.trim().toLowerCase(),
     role: session.user.role as SessionRole
   };
 }

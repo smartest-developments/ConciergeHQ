@@ -193,9 +193,11 @@ describe('OperatorQueuePage', () => {
       });
     });
 
-    expect(screen.getByText('Page 2 of 2')).toBeTruthy();
-    expect(screen.getByText('b@example.com')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Open detail' }).getAttribute('href')).toBe('/operator/requests/12');
+    await waitFor(() => {
+      expect(screen.getByText('Page 2 of 2')).toBeTruthy();
+      expect(screen.getByText('b@example.com')).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Open detail' }).getAttribute('href')).toBe('/operator/requests/12');
+    });
     await waitFor(() => {
       expect(screen.getByTestId('location-search').textContent).toContain('page=2');
     });

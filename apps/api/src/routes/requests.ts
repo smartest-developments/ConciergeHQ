@@ -7,6 +7,7 @@ import { createIpRateLimiter } from '../lib/rateLimit.js';
 import { getRateLimitConfig } from '../lib/runtimeConfig.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
 import { parseOperatorRoleHeader } from '../lib/operatorRole.js';
+import { resolveSessionIdentity } from '../lib/sessionAuth.js';
 
 const createRequestSchema = z.object({
   userEmail: z.string().email(),
@@ -115,7 +116,11 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         });
       }
 
+      const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
       const payload = parsed.data;
+      if (sessionIdentity?.role === 'CUSTOMER' && payload.userEmail.trim().toLowerCase() !== sessionIdentity.email) {
+        return reply.status(403).send({ error: 'REQUEST_FORBIDDEN' });
+      }
       const fee = calculateSourcingFeeChf(payload.budgetChf);
 
       const request = await app.prisma.$transaction(async (tx) => {
@@ -168,6 +173,15 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       });
     }
 
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+    if (
+      sessionIdentity?.role === 'CUSTOMER' &&
+      parsed.data.email &&
+      parsed.data.email.trim().toLowerCase() !== sessionIdentity.email
+    ) {
+      return reply.status(403).send({ error: 'REQUEST_FORBIDDEN' });
+    }
+
     const createdAt =
       parsed.data.dateFrom || parsed.data.dateTo
         ? {
@@ -176,7 +190,11 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           }
         : undefined;
     const where = {
-      ...(parsed.data.email ? { user: { email: parsed.data.email } } : {}),
+      ...(sessionIdentity?.role === 'CUSTOMER'
+        ? { userId: sessionIdentity.userId }
+        : parsed.data.email
+          ? { user: { email: parsed.data.email } }
+          : {}),
       ...(parsed.data.status ? { status: parsed.data.status } : {}),
       ...(parsed.data.category ? { category: parsed.data.category } : {}),
       ...(parsed.data.country ? { country: parsed.data.country } : {}),
@@ -252,10 +270,11 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       });
     }
 
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
     const request = await app.prisma.sourcingRequest.findUnique({
       where: { id: parsedParams.data.id },
       include: {
-        user: { select: { email: true } },
+        user: { select: { id: true, email: true } },
         proposals: {
           orderBy: { publishedAt: 'desc' }
         },
@@ -267,6 +286,9 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
 
     if (!request) {
       return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+    if (sessionIdentity?.role === 'CUSTOMER' && sessionIdentity.userId !== request.user.id) {
+      return reply.status(403).send({ error: 'REQUEST_FORBIDDEN' });
     }
 
     return {
@@ -306,6 +328,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
   });
 
   app.post('/api/requests/:id/status', async (req, reply) => {
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+    const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role'], sessionIdentity?.role ?? null);
+    if (!roleResult.ok) {
+      return reply.status(roleResult.statusCode).send({ error: roleResult.error });
+    }
+
     const parsedParams = requestParamsSchema.safeParse(req.params);
     if (!parsedParams.success) {
       return reply.status(400).send({
@@ -330,6 +358,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     }
 
     const { toStatus, reason } = parsedBody.data;
+    const operatorRole = roleResult.role;
 
     if (request.status === toStatus) {
       return reply.status(409).send({ error: 'REQUEST_ALREADY_IN_STATUS' });
@@ -363,7 +392,10 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           requestId: request.id,
           fromStatus: request.status,
           toStatus,
-          reason: reason ?? fallbackReasonByStatus[toStatus]
+          reason: reason ?? fallbackReasonByStatus[toStatus],
+          metadata: {
+            operatorRole
+          }
         }
       });
 
@@ -555,7 +587,8 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       preHandler: (req, reply) => enforceRateLimit(proposalLimiter, req, reply)
     },
     async (req, reply) => {
-      const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role']);
+      const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+      const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role'], sessionIdentity?.role ?? null);
       if (!roleResult.ok) {
         return reply.status(roleResult.statusCode).send({ error: roleResult.error });
       }

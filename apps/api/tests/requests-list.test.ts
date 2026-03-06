@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestStatus } from '@prisma/client';
 import { createServer } from '../src/server.js';
+import { AUTH_SESSION_COOKIE_NAME } from '../src/lib/sessionAuth.js';
 
 const makePrismaMock = () =>
   ({
@@ -13,6 +14,9 @@ const makePrismaMock = () =>
     },
     user: {
       upsert: vi.fn()
+    },
+    session: {
+      findUnique: vi.fn()
     },
     requestStatusEvent: {
       create: vi.fn()
@@ -109,6 +113,76 @@ describe('GET /api/requests list filters', () => {
       total: 11,
       totalPages: 3
     });
+
+    await app.close();
+  });
+
+  it('forces customer session list scope to session owner userId', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 301,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 77,
+        email: 'customer@example.com',
+        role: 'CUSTOMER'
+      }
+    });
+    prisma.sourcingRequest.count.mockResolvedValue(0);
+    prisma.sourcingRequest.findMany.mockResolvedValue([]);
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests?email=customer@example.com',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer`
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.count).toHaveBeenCalledWith({
+      where: {
+        userId: 77
+      }
+    });
+    expect(prisma.sourcingRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: 77
+        }
+      })
+    );
+
+    await app.close();
+  });
+
+  it('rejects customer session list query for a different email', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 302,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 22,
+        email: 'customer@example.com',
+        role: 'CUSTOMER'
+      }
+    });
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests?email=other@example.com',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer`
+      }
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({ error: 'REQUEST_FORBIDDEN' });
+    expect(prisma.sourcingRequest.count).not.toHaveBeenCalled();
 
     await app.close();
   });
@@ -221,7 +295,7 @@ describe('GET /api/requests list filters', () => {
     expect(prisma.sourcingRequest.findUnique).toHaveBeenCalledWith({
       where: { id: 55 },
       include: {
-        user: { select: { email: true } },
+        user: { select: { id: true, email: true } },
         proposals: { orderBy: { publishedAt: 'desc' } },
         statusEvents: { orderBy: { occurredAt: 'desc' } }
       }
@@ -269,6 +343,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'SOURCING' }
     });
 
@@ -305,6 +380,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/77/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'COMPLETED' }
     });
 
@@ -341,6 +417,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/91/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'CANCELED', reason: 'Customer requested cancellation' }
     });
 
@@ -372,6 +449,7 @@ describe('GET /api/requests list filters', () => {
     const invalidPayload = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'FEE_PAID' }
     });
     expect(invalidPayload.statusCode).toBe(400);
@@ -379,6 +457,7 @@ describe('GET /api/requests list filters', () => {
     const invalidTransition = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'COMPLETED' }
     });
     expect(invalidTransition.statusCode).toBe(409);
@@ -399,6 +478,22 @@ describe('GET /api/requests list filters', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({ error: 'REQUEST_NOT_FOUND' });
+
+    await app.close();
+  });
+
+  it('rejects status transition when operator identity is missing', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/55/status',
+      payload: { toStatus: 'SOURCING' }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: 'AUTH_REQUIRED' });
 
     await app.close();
   });

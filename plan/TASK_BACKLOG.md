@@ -195,7 +195,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/server.ts`, `docs/SECURITY.md`
 - id: ACQ-AUTH-001A
   priority: P0
-  status: TODO
+  status: IN_PROGRESS
   DoD: Add backend session primitives (session table/model, secure cookie issuance/revocation, and API middleware role extraction for `CUSTOMER|OPERATOR|ADMIN`).
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/routes`, `apps/api/tests`
 - id: ACQ-AUTH-001B
@@ -395,6 +395,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/lib/sessionAuth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/session-auth.test.ts`
 - id: ACQ-AUTH-001A2
   priority: P0
+  status: DONE
+  DoD: Wire request list/detail/create and operator status/proposal mutation routes to cookie-session identity and role extraction while preserving temporary operator-header fallback compatibility.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
+- id: ACQ-AUTH-001A3
+  priority: P0
   status: TODO
-  DoD: Wire proposal/status mutation routes to cookie-session role extraction and remove header-auth fallback once login API exists.
+  DoD: Remove `x-operator-role` fallback once auth login APIs are live and enforce session-only operator/admin authorization contracts.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`

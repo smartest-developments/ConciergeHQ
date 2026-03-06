@@ -20,3 +20,6 @@ Run with write access to `/plan` so backlog/progress updates can be committed to
 - Blocker: filesystem denied overwriting existing `apps/api/src/routes/requests.ts` (`Operation not permitted`) during session-auth integration attempt, while new-file writes succeeded.
 - Impact: completed `ACQ-AUTH-001A1` primitives, but `ACQ-AUTH-001A2` route-level cookie-session enforcement remains pending.
 - Next action: re-run with write access for existing route file and migration directory creation.
+
+## 2026-03-06T13:22:42+0100 - Automation blocked
+- This run could not apply backlog/code/doc changes because repository planning/docs files are read-only in this environment.

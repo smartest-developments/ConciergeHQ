@@ -86,6 +86,11 @@ Supports optional filters and pagination:
 - `page=<positive integer>` (default `1`)
 - `pageSize=<1..100>` (default `20`)
 
+Auth behavior:
+- If a valid `acq_session` cookie resolves to a `CUSTOMER`, the endpoint is automatically scoped to that customer (`userId`) regardless of `email` query.
+- If a `CUSTOMER` session provides a mismatched `email` filter, the endpoint returns `403 { "error": "REQUEST_FORBIDDEN" }`.
+- Without a valid session, existing `email` query filtering remains available for legacy flows.
+
 Example response:
 ```json
 {
@@ -140,6 +145,9 @@ Validation notes:
 
 ## GET /api/requests/:id
 Fetch operator/admin request detail context for triage workflows.
+
+Auth behavior:
+- If a valid `acq_session` cookie resolves to `CUSTOMER`, the request must belong to that customer; otherwise `403 { "error": "REQUEST_FORBIDDEN" }`.
 
 Example response:
 ```json
@@ -221,6 +229,8 @@ Example response:
 Responses:
 - `200` transition accepted
 - `400` with `{ "error": "VALIDATION_ERROR" }` when payload is invalid
+- `401` with `{ "error": "AUTH_REQUIRED" }` when neither operator session role nor temporary role header is present
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when session/header role is not operator/admin
 - `404` with `{ "error": "REQUEST_NOT_FOUND" }`
 - `409` with `{ "error": "INVALID_STATUS_TRANSITION" }` when transition is disallowed
 
@@ -256,7 +266,7 @@ Example response:
 
 ## POST /api/requests/:id/proposals
 Operator publishes a proposal and starts the 2-hour action window.
-Requires header `x-operator-role: OPERATOR|ADMIN`.
+Accepts operator role from `acq_session` cookie identity first; temporary fallback header `x-operator-role: OPERATOR|ADMIN` remains supported until login APIs are live.
 
 Example request:
 ```json
@@ -292,4 +302,8 @@ Additional responses:
   - session cookie name: `acq_session`
   - persisted session lookup by `tokenHash` with expiry/revocation checks
   - user roles normalized to `CUSTOMER|OPERATOR|ADMIN`
-- Current operator proposal publish endpoint remains backward compatible with `x-operator-role` while session route wiring is finalized in `ACQ-AUTH-001A2`.
+- Request APIs now consume session identity for customer ownership and operator role checks:
+  - `POST /api/requests` rejects customer session/email mismatch (`403 REQUEST_FORBIDDEN`)
+  - `GET /api/requests` forces customer scope to session owner
+  - `GET /api/requests/:id` enforces customer ownership
+  - `POST /api/requests/:id/status` and `POST /api/requests/:id/proposals` use session role precedence with temporary `x-operator-role` fallback (`ACQ-AUTH-001A2`)

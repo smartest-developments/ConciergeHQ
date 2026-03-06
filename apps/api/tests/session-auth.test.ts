@@ -49,6 +49,7 @@ describe('session auth helpers', () => {
           revokedAt: null,
           user: {
             id: 22,
+            email: 'admin@example.com',
             role: 'ADMIN'
           }
         })
@@ -73,6 +74,7 @@ describe('session auth helpers', () => {
         user: {
           select: {
             id: true,
+            email: true,
             role: true
           }
         }
@@ -82,6 +84,7 @@ describe('session auth helpers', () => {
     expect(identity).toEqual({
       sessionId: 7,
       userId: 22,
+      email: 'admin@example.com',
       role: 'ADMIN'
     });
   });
@@ -100,6 +103,7 @@ describe('session auth helpers', () => {
             revokedAt: new Date('2026-03-06T09:30:00.000Z'),
             user: {
               id: 9,
+              email: 'operator@example.com',
               role: 'OPERATOR'
             }
           })
@@ -109,6 +113,7 @@ describe('session auth helpers', () => {
             revokedAt: null,
             user: {
               id: 9,
+              email: 'operator@example.com',
               role: 'OPERATOR'
             }
           })
