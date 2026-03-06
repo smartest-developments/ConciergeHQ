@@ -9,6 +9,8 @@ import { OperatorQueuePage } from './pages/OperatorQueuePage';
 import { OperatorRequestDetailPage } from './pages/OperatorRequestDetailPage';
 import { SessionBootstrapPage } from './pages/SessionBootstrapPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 export const router = createBrowserRouter([
   {
@@ -18,6 +20,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/requests/new" replace /> },
       { path: '/auth/login', element: <SessionBootstrapPage /> },
       { path: '/auth/register', element: <RegisterPage /> },
+      { path: '/auth/forgot', element: <ForgotPasswordPage /> },
+      { path: '/auth/reset', element: <ResetPasswordPage /> },
       { path: '/auth/session', element: <Navigate to="/auth/login" replace /> },
       {
         path: '/requests/new',

@@ -425,3 +425,27 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+
+## RUN_UPDATE_2026-03-06T16:23:58+0100
+- id: ACQ-AUTH-004B
+  priority: P1
+  status: DONE
+  DoD: Add dedicated registration page UX (`/auth/register`) with client-side validation and test coverage, ready to bind to backend API.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/register-page.test.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`
+- id: ACQ-AUTH-004C
+  priority: P1
+  status: TODO
+  DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+
+## RUN_UPDATE_2026-03-06T16:27:30+0100
+- id: ACQ-AUTH-004C
+  priority: P1
+  status: DONE
+  DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`
+- id: ACQ-AUTH-002
+  priority: P1
+  status: TODO
+  DoD: Implement customer auth API (`POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`) with password hashing and brute-force protection.
+  Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`

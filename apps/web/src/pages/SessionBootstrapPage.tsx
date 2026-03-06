@@ -77,6 +77,9 @@ export function SessionBootstrapPage() {
       <p>
         Need an account? <Link to="/auth/register">Create account</Link>
       </p>
+      <p>
+        Forgot password? <Link to="/auth/forgot">Reset it</Link>
+      </p>
     </section>
   );
 }
