@@ -417,9 +417,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/auth.tsx`, `apps/web/src/components/AppShell.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`, `apps/web/tests/app-shell.test.tsx`
 - id: ACQ-AUTH-004B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add dedicated registration page UX (`/auth/register`) with client-side validation and test coverage, ready to bind to backend API.
-  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/components/AppShell.tsx`, `apps/web/tests/register-page.test.tsx`, `apps/web/tests/app-shell.test.tsx`
 - id: ACQ-AUTH-004C
   priority: P1
   status: TODO

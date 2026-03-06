@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { clearAuthSession, readAuthSession, saveAuthSession, type SessionRole } from '../auth';
 
 const DEFAULT_EMAIL = 'demo@acquisitionconcierge.ch';
@@ -73,6 +73,10 @@ export function SessionBootstrapPage() {
           Sign out
         </button>
       </form>
+
+      <p>
+        Need an account? <Link to="/auth/register">Create account</Link>
+      </p>
     </section>
   );
 }

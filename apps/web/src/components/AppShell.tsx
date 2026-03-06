@@ -33,6 +33,7 @@ export function AppShell() {
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/operator/queue">Operator Queue</NavLink>
           <NavLink to="/auth/login">Sign In</NavLink>
+          <NavLink to="/auth/register">Create Account</NavLink>
         </nav>
       </header>
       <main>

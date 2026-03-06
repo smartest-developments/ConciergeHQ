@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { OperatorQueuePage } from './pages/OperatorQueuePage';
 import { OperatorRequestDetailPage } from './pages/OperatorRequestDetailPage';
 import { SessionBootstrapPage } from './pages/SessionBootstrapPage';
+import { RegisterPage } from './pages/RegisterPage';
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/requests/new" replace /> },
       { path: '/auth/login', element: <SessionBootstrapPage /> },
+      { path: '/auth/register', element: <RegisterPage /> },
       { path: '/auth/session', element: <Navigate to="/auth/login" replace /> },
       {
         path: '/requests/new',
