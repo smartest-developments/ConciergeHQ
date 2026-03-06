@@ -22,16 +22,16 @@ describe('SessionBootstrapPage', () => {
 
   it('stores session bootstrap credentials', () => {
     render(
-      <MemoryRouter initialEntries={['/auth/session?next=%2Foperator%2Fqueue']}>
+      <MemoryRouter initialEntries={['/auth/login?next=%2Foperator%2Fqueue']}>
         <Routes>
-          <Route path="/auth/session" element={<SessionBootstrapPage />} />
+          <Route path="/auth/login" element={<SessionBootstrapPage />} />
         </Routes>
       </MemoryRouter>
     );
 
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'admin@example.com' } });
     fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'ADMIN' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(window.localStorage.getItem('acq_auth_session')).toContain('admin@example.com');
     expect(window.localStorage.getItem('acq_auth_session')).toContain('ADMIN');

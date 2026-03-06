@@ -6,7 +6,7 @@ export function AppShell() {
 
   function onSignOut() {
     clearAuthSession();
-    window.location.assign('/auth/session');
+    window.location.assign('/auth/login');
   }
 
   return (
@@ -32,7 +32,7 @@ export function AppShell() {
           <NavLink to="/requests/new">New Request</NavLink>
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/operator/queue">Operator Queue</NavLink>
-          <NavLink to="/auth/session">Session</NavLink>
+          <NavLink to="/auth/login">Sign In</NavLink>
         </nav>
       </header>
       <main>

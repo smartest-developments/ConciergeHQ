@@ -15,7 +15,8 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <Navigate to="/requests/new" replace /> },
-      { path: '/auth/session', element: <SessionBootstrapPage /> },
+      { path: '/auth/login', element: <SessionBootstrapPage /> },
+      { path: '/auth/session', element: <Navigate to="/auth/login" replace /> },
       {
         path: '/requests/new',
         element: (

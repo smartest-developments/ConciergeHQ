@@ -9,7 +9,11 @@ function normalizeNextPath(value: string | null): string {
     return '/dashboard';
   }
 
-  return value.startsWith('/') ? value : '/dashboard';
+  if (!value.startsWith('/') || value.startsWith('//')) {
+    return '/dashboard';
+  }
+
+  return value;
 }
 
 export function SessionBootstrapPage() {
@@ -36,13 +40,13 @@ export function SessionBootstrapPage() {
 
   function onSignOut() {
     clearAuthSession();
-    navigate('/auth/session', { replace: true });
+    navigate('/auth/login', { replace: true });
   }
 
   return (
     <section>
-      <h2>Session Bootstrap</h2>
-      <p>Choose role and email to simulate authenticated navigation before backend cookie auth is wired.</p>
+      <h2>Sign In</h2>
+      <p>Choose role and email to continue while server-side cookie login endpoints are being finalized.</p>
 
       {currentSession ? (
         <p className="card">
@@ -64,9 +68,9 @@ export function SessionBootstrapPage() {
           </select>
         </label>
         {error ? <p className="error">{error}</p> : null}
-        <button type="submit">Start session</button>
+        <button type="submit">Sign in</button>
         <button type="button" onClick={onSignOut}>
-          Clear session
+          Sign out
         </button>
       </form>
     </section>

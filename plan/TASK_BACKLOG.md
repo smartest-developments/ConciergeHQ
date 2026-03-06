@@ -34,7 +34,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Exit: Release governance, deployment gates, and rollback procedure are documented and dry-run tested.
 - item: MUST-03
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   Scope: `ACQ-AUTH-002`, `ACQ-AUTH-003`, `ACQ-AUTH-004`, `ACQ-AUTH-005`
   Exit: Customer login lifecycle is complete end-to-end (UI + API + secure sessions).
 - item: MUST-04
@@ -215,7 +215,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`
 - id: ACQ-AUTH-004
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Add web auth UX (login/register/forgot/reset pages) and route guards for authenticated-only views.
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`
 - id: ACQ-AUTH-005
@@ -361,14 +361,14 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`
 - id: ACQ-RISK-004
   priority: P1
-  status: OPEN
-  DoD: Proposal expiry job can emit duplicate status events under horizontal scaling without shared locking/guarded updates.
-  Evidence: `apps/api/src/jobs/proposalExpiry.ts`
+  status: MITIGATED
+  DoD: Proposal expiry worker enforces conditional state transition so duplicate `PROPOSAL_EXPIRED` events are not emitted under concurrent runs.
+  Evidence: `apps/api/src/jobs/proposalExpiry.ts`, `apps/api/tests/proposal-expiry-job.test.ts`
 - id: ACQ-RISK-005
   priority: P1
-  status: OPEN
-  DoD: `origin: true` CORS policy can expose unauthenticated endpoints to unintended browser origins in production.
-  Evidence: `apps/api/src/server.ts`
+  status: MITIGATED
+  DoD: CORS is constrained by explicit allow-list config and no longer defaults to permissive wildcard semantics in production.
+  Evidence: `apps/api/src/server.ts`, `apps/api/src/lib/runtimeConfig.ts`
 
 ## PARKED
 - id: ACQ-PARK-001
@@ -403,3 +403,25 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Remove `x-operator-role` fallback once auth login APIs are live and enforce session-only operator/admin authorization contracts.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
+
+## AUTO_SPLIT_2026-03-06_ACQ-AUTH-004
+- id: ACQ-AUTH-004
+  priority: P1
+  status: IN_PROGRESS
+  DoD: Deliver customer auth UX incrementally so each run lands a test-covered UI slice while backend auth APIs are still in flight.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`
+- id: ACQ-AUTH-004A
+  priority: P1
+  status: DONE
+  DoD: Introduce canonical `/auth/login` route, migrate session-gate redirects and shell navigation to it, and keep `/auth/session` compatibility redirect.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/auth.tsx`, `apps/web/src/components/AppShell.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`, `apps/web/tests/app-shell.test.tsx`
+- id: ACQ-AUTH-004B
+  priority: P1
+  status: TODO
+  DoD: Add dedicated registration page UX (`/auth/register`) with client-side validation and test coverage, ready to bind to backend API.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+- id: ACQ-AUTH-004C
+  priority: P1
+  status: TODO
+  DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`

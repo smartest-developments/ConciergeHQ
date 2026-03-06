@@ -89,7 +89,7 @@ export function RequireSession({
 
   if (!session) {
     const nextPath = `${location.pathname}${location.search}`;
-    return <Navigate to={`/auth/session?next=${encodeURIComponent(nextPath)}`} replace />;
+    return <Navigate to={`/auth/login?next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(session.role)) {
