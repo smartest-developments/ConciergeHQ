@@ -46,6 +46,16 @@ describe('GET /api/requests list filters', () => {
 
   it('applies status/category/country/date filters with pagination and sorting', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 300,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 1,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.count.mockResolvedValue(11);
     prisma.sourcingRequest.findMany.mockResolvedValue([
       {
@@ -67,7 +77,10 @@ describe('GET /api/requests list filters', () => {
     const app = createServer(prisma as never);
     const response = await app.inject({
       method: 'GET',
-      url: '/api/requests?status=SOURCING&category=ELECTRONICS&country=CH&dateFrom=2026-03-01T00:00:00.000Z&dateTo=2026-03-05T23:59:59.999Z&sortBy=budgetChf&sortDir=asc&page=2&pageSize=5'
+      url: '/api/requests?status=SOURCING&category=ELECTRONICS&country=CH&dateFrom=2026-03-01T00:00:00.000Z&dateTo=2026-03-05T23:59:59.999Z&sortBy=budgetChf&sortDir=asc&page=2&pageSize=5',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator`
+      }
     });
 
     expect(response.statusCode).toBe(200);
@@ -206,15 +219,44 @@ describe('GET /api/requests list filters', () => {
     await app.close();
   });
 
+  it('requires authenticated session for request listing', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: 'AUTH_REQUIRED' });
+    expect(prisma.sourcingRequest.count).not.toHaveBeenCalled();
+
+    await app.close();
+  });
+
   it('defaults to createdAt descending sort when no sort params are provided', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 303,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 1,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.count.mockResolvedValue(0);
     prisma.sourcingRequest.findMany.mockResolvedValue([]);
     const app = createServer(prisma as never);
 
     const response = await app.inject({
       method: 'GET',
-      url: '/api/requests'
+      url: '/api/requests',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator`
+      }
     });
 
     expect(response.statusCode).toBe(200);
@@ -248,6 +290,16 @@ describe('GET /api/requests list filters', () => {
 
   it('returns request detail with timeline and proposal history', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 304,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 1,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue({
       id: 55,
       user: { email: 'detail@example.com' },
@@ -288,7 +340,10 @@ describe('GET /api/requests list filters', () => {
     const app = createServer(prisma as never);
     const response = await app.inject({
       method: 'GET',
-      url: '/api/requests/55'
+      url: '/api/requests/55',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator`
+      }
     });
 
     expect(response.statusCode).toBe(200);
@@ -322,6 +377,22 @@ describe('GET /api/requests list filters', () => {
         ]
       })
     );
+
+    await app.close();
+  });
+
+  it('requires authenticated session for request detail', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests/55'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: 'AUTH_REQUIRED' });
+    expect(prisma.sourcingRequest.findUnique).not.toHaveBeenCalled();
 
     await app.close();
   });
@@ -468,12 +539,25 @@ describe('GET /api/requests list filters', () => {
 
   it('returns 404 when request detail is missing', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 305,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 1,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue(null);
     const app = createServer(prisma as never);
 
     const response = await app.inject({
       method: 'GET',
-      url: '/api/requests/9999'
+      url: '/api/requests/9999',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator`
+      }
     });
 
     expect(response.statusCode).toBe(404);
@@ -490,6 +574,95 @@ describe('GET /api/requests list filters', () => {
       method: 'POST',
       url: '/api/requests/55/status',
       payload: { toStatus: 'SOURCING' }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: 'AUTH_REQUIRED' });
+
+    await app.close();
+  });
+});
+
+describe('checkout/payment/proposal unhappy-path validations', () => {
+  const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const originalWebBaseUrl = process.env.WEB_BASE_URL;
+  const originalCorsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS;
+  const originalRateWindowMinutes = process.env.RATE_LIMIT_WINDOW_MINUTES;
+  const originalRatePaymentMax = process.env.RATE_LIMIT_PAYMENT_MAX_REQUESTS;
+
+  beforeEach(() => {
+    process.env.STRIPE_SECRET_KEY = originalStripeSecretKey ?? 'sk_test_123';
+    process.env.WEB_BASE_URL = originalWebBaseUrl ?? 'http://localhost:5173';
+    process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins ?? 'http://localhost:5173';
+    process.env.RATE_LIMIT_WINDOW_MINUTES = '1';
+    process.env.RATE_LIMIT_PAYMENT_MAX_REQUESTS = '1';
+  });
+
+  afterEach(() => {
+    process.env.STRIPE_SECRET_KEY = originalStripeSecretKey;
+    process.env.WEB_BASE_URL = originalWebBaseUrl;
+    process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins;
+    process.env.RATE_LIMIT_WINDOW_MINUTES = originalRateWindowMinutes;
+    process.env.RATE_LIMIT_PAYMENT_MAX_REQUESTS = originalRatePaymentMax;
+  });
+
+  it('returns deterministic 429 headers for repeated checkout attempts', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue(null);
+    const app = createServer(prisma as never);
+
+    const firstAttempt = await app.inject({
+      method: 'POST',
+      url: '/api/requests/12/checkout'
+    });
+    expect(firstAttempt.statusCode).toBe(404);
+
+    const secondAttempt = await app.inject({
+      method: 'POST',
+      url: '/api/requests/12/checkout'
+    });
+
+    expect(secondAttempt.statusCode).toBe(429);
+    expect(secondAttempt.json()).toEqual({ error: 'RATE_LIMITED' });
+    expect(secondAttempt.headers['x-ratelimit-limit']).toBe('1');
+    expect(secondAttempt.headers['x-ratelimit-remaining']).toBe('0');
+    expect(secondAttempt.headers['x-ratelimit-reset']).toBeDefined();
+    expect(secondAttempt.headers['retry-after']).toBeDefined();
+
+    await app.close();
+  });
+
+  it('returns validation error for confirm-payment payload without sessionId', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/12/confirm-payment',
+      payload: {}
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual(
+      expect.objectContaining({
+        error: 'VALIDATION_ERROR'
+      })
+    );
+
+    await app.close();
+  });
+
+  it('returns auth required for proposal publish without operator identity', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/12/proposals',
+      payload: {
+        merchantName: 'Lens Hub',
+        externalUrl: 'https://example.com/proposal'
+      }
     });
 
     expect(response.statusCode).toBe(401);

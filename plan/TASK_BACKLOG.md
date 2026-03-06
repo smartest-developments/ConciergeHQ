@@ -173,9 +173,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-AUTO-017
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add API integration tests for checkout/payment/proposal routes, including 429 headers and unhappy-path validations.
-  Evidence: `apps/api/tests`
+  Evidence: `apps/api/tests/requests-list.test.ts`, `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
 - id: ACQ-AUTO-018
   priority: P1
   status: DONE
@@ -205,9 +205,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/auth.tsx`, `apps/web/src/router.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`
 - id: ACQ-AUTH-002
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Implement customer auth API (`POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`) with password hashing and brute-force protection.
-  Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-AUTH-003
   priority: P1
   status: TODO
@@ -220,7 +220,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`
 - id: ACQ-AUTH-005
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Bind dashboard/request access to authenticated session identity and remove public email-based data filtering.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
 - id: ACQ-ADMIN-001
@@ -446,14 +446,14 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`
 - id: ACQ-AUTH-002
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Implement customer auth API (`POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`) with password hashing and brute-force protection.
-  Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 
 ## RUN_UPDATE_2026-03-06T17:22:41+0100
 - id: ACQ-AUTH-002
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   Note: Split to unblock API auth integration in 1-3h increments.
 - id: ACQ-AUTH-002A
   priority: P1
@@ -462,6 +462,14 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `plan/PROGRESS_LOG.md`.
 - id: ACQ-AUTH-002B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add credential auth endpoints (`POST /api/auth/register`, `POST /api/auth/login`) with password hashing and brute-force protections.
-  Evidence target: `apps/api/src/routes/auth.ts`, auth route tests, API/security docs.
+  Evidence target: `apps/api/src/routes/auth.ts`, `apps/api/src/lib/passwordAuth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`.
+
+## RUN_UPDATE_2026-03-06T18:05:00+0100
+- id: ACQ-AUTO-017
+  priority: P1
+  status: DONE
+  DoD: Add API integration tests for checkout/payment/proposal routes, including 429 headers and unhappy-path validations.
+  Evidence: `apps/api/tests/requests-list.test.ts`, `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
+  Note: completed by stabilizing rate-limit guard execution and validating checkout/confirm/proposal unhappy-path contracts.

@@ -41,3 +41,9 @@
   - active-session resolver with revoked/expired filtering
 - Added role primitives in schema via `User.role` (`CUSTOMER|OPERATOR|ADMIN`) and `Session` persistence model.
 - Transitional note: proposal/status mutation routes still accept header role fallback until `ACQ-AUTH-001A2` wires full cookie-session enforcement.
+
+## 2026-03-06 Credential Auth Increment (ACQ-AUTH-002B)
+- Added `UserCredential` persistence (`passwordHash`, failed-attempt counter, lock window) to support email/password auth without storing plaintext secrets.
+- `POST /api/auth/register` now hashes password with salted scrypt and immediately issues an HTTP-only `acq_session` cookie.
+- `POST /api/auth/login` now enforces deterministic brute-force lockout (5 failed attempts -> 15 minute lock, `429 AUTH_LOCKED` + `Retry-After`).
+- Successful login resets failed-attempt counters and creates a fresh server-side session row.

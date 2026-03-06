@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createServer } from '../src/server.js'
-import { AUTH_SESSION_COOKIE_NAME, hashSessionToken } from '../src/lib/sessionAuth.js'
+import { hashPassword } from '../src/lib/passwordAuth.js'
+import {
+  AUTH_SESSION_COOKIE_NAME,
+  AUTH_SESSION_COOKIE_TTL_SECONDS,
+  hashSessionToken
+} from '../src/lib/sessionAuth.js'
 
 const makePrismaMock = () =>
   ({
@@ -12,11 +17,18 @@ const makePrismaMock = () =>
       create: vi.fn()
     },
     user: {
-      upsert: vi.fn()
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn()
+    },
+    userCredential: {
+      create: vi.fn(),
+      update: vi.fn()
     },
     session: {
       findUnique: vi.fn(),
-      updateMany: vi.fn()
+      updateMany: vi.fn(),
+      create: vi.fn()
     },
     requestStatusEvent: {
       create: vi.fn()
@@ -42,6 +54,74 @@ describe('auth routes', () => {
     process.env.STRIPE_SECRET_KEY = originalStripeSecretKey
     process.env.WEB_BASE_URL = originalWebBaseUrl
     process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins
+  })
+
+  it('creates customer account + session on register', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue(null)
+    prisma.$transaction.mockImplementation(async (handler: any) =>
+      handler({
+        user: {
+          create: vi.fn().mockResolvedValue({
+            id: 12,
+            email: 'buyer@example.com',
+            role: 'CUSTOMER'
+          })
+        },
+        userCredential: {
+          create: vi.fn().mockResolvedValue({ id: 1 })
+        },
+        session: {
+          create: vi.fn().mockResolvedValue({ id: 77 })
+        }
+      })
+    )
+
+    const app = createServer(prisma as never)
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        email: 'Buyer@Example.com',
+        password: 'Passw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json()).toEqual({
+      user: {
+        id: 12,
+        email: 'buyer@example.com',
+        role: 'CUSTOMER'
+      }
+    })
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: 'buyer@example.com' },
+      select: { id: true }
+    })
+    expect(response.headers['set-cookie']).toContain(`${AUTH_SESSION_COOKIE_NAME}=`)
+    expect(response.headers['set-cookie']).toContain(`Max-Age=${AUTH_SESSION_COOKIE_TTL_SECONDS}`)
+    await app.close()
+  })
+
+  it('returns conflict for duplicate register email', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue({ id: 1 })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/register',
+      payload: {
+        email: 'buyer@example.com',
+        password: 'Passw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json()).toEqual({ error: 'EMAIL_ALREADY_REGISTERED' })
+    await app.close()
   })
 
   it('returns 401 for auth/me without valid session', async () => {
@@ -94,6 +174,120 @@ describe('auth routes', () => {
         where: { tokenHash: hashSessionToken('session-token-1') }
       })
     )
+    await app.close()
+  })
+
+  it('returns invalid credentials on login mismatch and increments failed attempts', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue({
+      id: 9,
+      email: 'buyer@example.com',
+      role: 'CUSTOMER',
+      credential: {
+        id: 56,
+        passwordHash: hashPassword('Passw0rd!'),
+        failedAttemptCount: 2,
+        lockedUntil: null
+      }
+    })
+    prisma.userCredential.update.mockResolvedValue({ id: 56 })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'buyer@example.com',
+        password: 'wrong-password'
+      }
+    })
+
+    expect(response.statusCode).toBe(401)
+    expect(response.json()).toEqual({ error: 'INVALID_CREDENTIALS' })
+    expect(prisma.userCredential.update).toHaveBeenCalledWith({
+      where: { id: 56 },
+      data: {
+        failedAttemptCount: 3,
+        lockedUntil: null
+      }
+    })
+    await app.close()
+  })
+
+  it('returns lock response when credential is currently locked', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue({
+      id: 9,
+      email: 'buyer@example.com',
+      role: 'CUSTOMER',
+      credential: {
+        id: 56,
+        passwordHash: 'salt:invalidhash',
+        failedAttemptCount: 0,
+        lockedUntil: new Date(Date.now() + 60_000)
+      }
+    })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'buyer@example.com',
+        password: 'Passw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(429)
+    expect(response.json()).toMatchObject({ error: 'AUTH_LOCKED' })
+    expect(response.headers['retry-after']).toBeDefined()
+    await app.close()
+  })
+
+  it('creates session and resets failed attempts on successful login', async () => {
+    const prisma = makePrismaMock()
+    prisma.user.findUnique.mockResolvedValue({
+      id: 9,
+      email: 'buyer@example.com',
+      role: 'CUSTOMER',
+      credential: {
+        id: 56,
+        passwordHash:
+          '0123456789abcdef0123456789abcdef:9a0733f756e33eb6232d7a2fd80b9daef32eeb9f91155123d987057dd36cecdf46bb8f007ed8dd0bd5ca5d2d3f29e88bab9c8c8d93191aaa35d847d11951ad89',
+        failedAttemptCount: 3,
+        lockedUntil: null
+      }
+    })
+    prisma.userCredential.update.mockResolvedValue({ id: 56 })
+    prisma.session.create.mockResolvedValue({ id: 88 })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/login',
+      payload: {
+        email: 'buyer@example.com',
+        password: 'Passw0rd!'
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      user: {
+        id: 9,
+        email: 'buyer@example.com',
+        role: 'CUSTOMER'
+      }
+    })
+    expect(prisma.userCredential.update).toHaveBeenCalledWith({
+      where: { id: 56 },
+      data: {
+        failedAttemptCount: 0,
+        lockedUntil: null
+      }
+    })
+    expect(prisma.session.create).toHaveBeenCalled()
+    expect(response.headers['set-cookie']).toContain(`${AUTH_SESSION_COOKIE_NAME}=`)
     await app.close()
   })
 

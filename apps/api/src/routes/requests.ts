@@ -102,12 +102,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     }
   };
 
-  app.post(
-    '/api/requests',
-    {
-      preHandler: (req, reply) => enforceRateLimit(requestLimiter, req, reply)
-    },
-    async (req, reply) => {
+  app.post('/api/requests', async (req, reply) => {
+      const rateLimitResponse = enforceRateLimit(requestLimiter, req, reply);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       const parsed = createRequestSchema.safeParse(req.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -161,8 +161,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         sourcingFeeChf: Number(request.sourcingFeeChf),
         createdAt: request.createdAt
       });
-    }
-  );
+    });
 
   app.get('/api/requests', async (req, reply) => {
     const parsed = listRequestsQuerySchema.safeParse(req.query);
@@ -174,8 +173,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     }
 
     const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+    if (!sessionIdentity) {
+      return reply.status(401).send({ error: 'AUTH_REQUIRED' });
+    }
+
     if (
-      sessionIdentity?.role === 'CUSTOMER' &&
+      sessionIdentity.role === 'CUSTOMER' &&
       parsed.data.email &&
       parsed.data.email.trim().toLowerCase() !== sessionIdentity.email
     ) {
@@ -190,7 +193,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           }
         : undefined;
     const where = {
-      ...(sessionIdentity?.role === 'CUSTOMER'
+      ...(sessionIdentity.role === 'CUSTOMER'
         ? { userId: sessionIdentity.userId }
         : parsed.data.email
           ? { user: { email: parsed.data.email } }
@@ -271,6 +274,10 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     }
 
     const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+    if (!sessionIdentity) {
+      return reply.status(401).send({ error: 'AUTH_REQUIRED' });
+    }
+
     const request = await app.prisma.sourcingRequest.findUnique({
       where: { id: parsedParams.data.id },
       include: {
@@ -287,7 +294,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     if (!request) {
       return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
     }
-    if (sessionIdentity?.role === 'CUSTOMER' && sessionIdentity.userId !== request.user.id) {
+    if (sessionIdentity.role === 'CUSTOMER' && sessionIdentity.userId !== request.user.id) {
       return reply.status(403).send({ error: 'REQUEST_FORBIDDEN' });
     }
 
@@ -409,12 +416,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     };
   });
 
-  app.post(
-    '/api/requests/:id/checkout',
-    {
-      preHandler: (req, reply) => enforceRateLimit(paymentLimiter, req, reply)
-    },
-    async (req, reply) => {
+  app.post('/api/requests/:id/checkout', async (req, reply) => {
+      const rateLimitResponse = enforceRateLimit(paymentLimiter, req, reply);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       const parsed = requestParamsSchema.safeParse(req.params);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -478,15 +485,14 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         checkoutUrl: session.url,
         sessionId: session.id
       };
-    }
-  );
+    });
 
-  app.post(
-    '/api/requests/:id/confirm-payment',
-    {
-      preHandler: (req, reply) => enforceRateLimit(paymentLimiter, req, reply)
-    },
-    async (req, reply) => {
+  app.post('/api/requests/:id/confirm-payment', async (req, reply) => {
+      const rateLimitResponse = enforceRateLimit(paymentLimiter, req, reply);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       const parsedParams = requestParamsSchema.safeParse(req.params);
       if (!parsedParams.success) {
         return reply.status(400).send({
@@ -578,15 +584,14 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         status: updated.status,
         feePaidAt: updated.feePaidAt
       };
-    }
-  );
+    });
 
-  app.post(
-    '/api/requests/:id/proposals',
-    {
-      preHandler: (req, reply) => enforceRateLimit(proposalLimiter, req, reply)
-    },
-    async (req, reply) => {
+  app.post('/api/requests/:id/proposals', async (req, reply) => {
+      const rateLimitResponse = enforceRateLimit(proposalLimiter, req, reply);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
       const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role'], sessionIdentity?.role ?? null);
       if (!roleResult.ok) {
@@ -672,6 +677,5 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
           expiresAt: result.proposal.expiresAt
         }
       };
-    }
-  );
+    });
 }

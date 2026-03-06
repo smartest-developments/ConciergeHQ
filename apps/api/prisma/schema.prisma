@@ -76,10 +76,22 @@ model User {
   email     String           @unique
   name      String?
   role      UserRole         @default(CUSTOMER)
+  credential UserCredential?
   requests  SourcingRequest[]
   sessions  Session[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+}
+
+model UserCredential {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passwordHash       String
+  failedAttemptCount Int      @default(0)
+  lockedUntil        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model Session {

@@ -50,16 +50,16 @@ function renderPaymentState(record: DashboardRecord) {
 
 export function DashboardPage() {
   const session = readAuthSession();
-  const email = session?.email ?? localStorage.getItem('acq_user_email') ?? 'demo@acquisitionconcierge.ch';
+  const email = session?.email ?? 'unknown';
   const [records, setRecords] = useState<DashboardRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
   const hasProposalNotice = records.some((record) => record.proposal !== null);
 
-  async function load(targetEmail: string) {
+  async function load() {
     try {
       setError(null);
-      const response = await fetchRequests(targetEmail || undefined);
+      const response = await fetchRequests();
       setRecords(response.requests);
     } catch {
       setError('Could not load requests dashboard.');
@@ -67,8 +67,7 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    localStorage.setItem('acq_user_email', email);
-    void load(email);
+    void load();
 
     const rawPaymentNotice = localStorage.getItem(PAYMENT_NOTICE_STORAGE_KEY);
     if (rawPaymentNotice) {
@@ -82,7 +81,7 @@ export function DashboardPage() {
       }
       localStorage.removeItem(PAYMENT_NOTICE_STORAGE_KEY);
     }
-  }, [email]);
+  }, []);
 
   return (
     <section>

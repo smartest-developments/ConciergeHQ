@@ -68,7 +68,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('link', { name: 'Retry payment checkout' }).getAttribute('href')).toBe(
       '/payment/42?fee=180'
     );
-    expect(mockedFetchRequests).toHaveBeenCalledWith('buyer@example.com');
+    expect(mockedFetchRequests).toHaveBeenCalledWith();
   });
 
   it('renders persisted payment cancellation notice once', async () => {

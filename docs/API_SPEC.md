@@ -87,9 +87,9 @@ Supports optional filters and pagination:
 - `pageSize=<1..100>` (default `20`)
 
 Auth behavior:
-- If a valid `acq_session` cookie resolves to a `CUSTOMER`, the endpoint is automatically scoped to that customer (`userId`) regardless of `email` query.
+- Requires a valid `acq_session` cookie. Missing/invalid session returns `401 { "error": "AUTH_REQUIRED" }`.
+- If session role resolves to `CUSTOMER`, the endpoint is automatically scoped to that customer (`userId`) regardless of `email` query.
 - If a `CUSTOMER` session provides a mismatched `email` filter, the endpoint returns `403 { "error": "REQUEST_FORBIDDEN" }`.
-- Without a valid session, existing `email` query filtering remains available for legacy flows.
 
 Example response:
 ```json
@@ -147,7 +147,8 @@ Validation notes:
 Fetch operator/admin request detail context for triage workflows.
 
 Auth behavior:
-- If a valid `acq_session` cookie resolves to `CUSTOMER`, the request must belong to that customer; otherwise `403 { "error": "REQUEST_FORBIDDEN" }`.
+- Requires a valid `acq_session` cookie. Missing/invalid session returns `401 { "error": "AUTH_REQUIRED" }`.
+- If session role resolves to `CUSTOMER`, the request must belong to that customer; otherwise `403 { "error": "REQUEST_FORBIDDEN" }`.
 
 Example response:
 ```json
@@ -307,6 +308,45 @@ Additional responses:
   - `GET /api/requests` forces customer scope to session owner
   - `GET /api/requests/:id` enforces customer ownership
   - `POST /api/requests/:id/status` and `POST /api/requests/:id/proposals` use session role precedence with temporary `x-operator-role` fallback (`ACQ-AUTH-001A2`)
+
+## POST /api/auth/register
+Create a customer account with credential hash + session issuance.
+
+Example request:
+```json
+{
+  "email": "buyer@example.com",
+  "password": "Passw0rd!",
+  "name": "Buyer"
+}
+```
+
+Responses:
+- `201` with `{ "user": { "id": <number>, "email": <string>, "role": "CUSTOMER" } }` and `Set-Cookie: acq_session=...`.
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when payload is invalid.
+- `409` with `{ "error": "EMAIL_ALREADY_REGISTERED" }` when email already exists.
+
+## POST /api/auth/login
+Authenticate credentials and rotate session cookie.
+
+Example request:
+```json
+{
+  "email": "buyer@example.com",
+  "password": "Passw0rd!"
+}
+```
+
+Responses:
+- `200` with `{ "user": { "id": <number>, "email": <string>, "role": "CUSTOMER|OPERATOR|ADMIN" } }` and `Set-Cookie: acq_session=...`.
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when payload is invalid.
+- `401` with `{ "error": "INVALID_CREDENTIALS" }` when email/password mismatch.
+- `429` with `{ "error": "AUTH_LOCKED", "retryAfterSeconds": <number> }` and `Retry-After` header when brute-force lock window is active.
+
+Behavior:
+- Passwords are persisted as salted scrypt hashes.
+- Failed login attempts are tracked per credential.
+- After 5 consecutive failed attempts, login is locked for 15 minutes.
 
 ## GET /api/auth/me
 Resolve active authenticated user from `acq_session` cookie.
