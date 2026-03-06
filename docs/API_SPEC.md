@@ -256,6 +256,7 @@ Example response:
 
 ## POST /api/requests/:id/proposals
 Operator publishes a proposal and starts the 2-hour action window.
+Requires header `x-operator-role: OPERATOR|ADMIN`.
 
 Example request:
 ```json
@@ -281,3 +282,7 @@ Example response:
   }
 }
 ```
+
+Additional responses:
+- `401` with `{ "error": "AUTH_REQUIRED" }` when operator role header is missing.
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when operator role is invalid.

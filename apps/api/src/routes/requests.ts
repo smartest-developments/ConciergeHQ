@@ -6,6 +6,7 @@ import { calculateSourcingFeeChf } from '../domain/fee.js';
 import { createIpRateLimiter } from '../lib/rateLimit.js';
 import { getRateLimitConfig } from '../lib/runtimeConfig.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
+import { parseOperatorRoleHeader } from '../lib/operatorRole.js';
 
 const createRequestSchema = z.object({
   userEmail: z.string().email(),
@@ -554,6 +555,12 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       preHandler: (req, reply) => enforceRateLimit(proposalLimiter, req, reply)
     },
     async (req, reply) => {
+      const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role']);
+      if (!roleResult.ok) {
+        return reply.status(roleResult.statusCode).send({ error: roleResult.error });
+      }
+      const operatorRole = roleResult.role;
+
       const parsedParams = requestParamsSchema.safeParse(req.params);
       if (!parsedParams.success) {
         return reply.status(400).send({
@@ -611,7 +618,8 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
             toStatus: RequestStatus.PROPOSAL_PUBLISHED,
             reason: 'Proposal published by operator',
             metadata: {
-              proposalId: proposal.id
+              proposalId: proposal.id,
+              operatorRole
             }
           }
         });

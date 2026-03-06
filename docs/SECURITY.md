@@ -4,6 +4,7 @@
 - v1 bootstrap runs without full auth, but API is designed to add auth middleware.
 - Next increment should enforce session-bound user identity and remove raw email query filtering.
 - Planned session model: HTTP-only secure cookie + server-side session table with rotation.
+- Interim hardening in place: `POST /api/requests/:id/proposals` now rejects unauthenticated calls and requires `x-operator-role: OPERATOR|ADMIN` (`401 AUTH_REQUIRED` or `403 OPERATOR_FORBIDDEN`).
 
 ## Input validation and abuse controls
 - Fastify routes validate payloads with Zod.

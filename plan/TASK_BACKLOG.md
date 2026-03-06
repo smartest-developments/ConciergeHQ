@@ -118,9 +118,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`
 - id: ACQ-AUTO-006
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Add operator-only auth guard for proposal publishing endpoint.
-  Evidence: `apps/api/src/routes/requests.ts`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/src/lib/operatorRole.ts`, `apps/api/tests/operator-role.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-AUTO-007
   priority: P1
   status: TODO
