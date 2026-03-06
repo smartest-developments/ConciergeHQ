@@ -1,11 +1,13 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
+import { RequireSession } from './auth';
 import { CreateRequestPage } from './pages/CreateRequestPage';
 import { PaymentPage } from './pages/PaymentPage';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { OperatorQueuePage } from './pages/OperatorQueuePage';
 import { OperatorRequestDetailPage } from './pages/OperatorRequestDetailPage';
+import { SessionBootstrapPage } from './pages/SessionBootstrapPage';
 
 export const router = createBrowserRouter([
   {
@@ -13,12 +15,55 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <Navigate to="/requests/new" replace /> },
-      { path: '/requests/new', element: <CreateRequestPage /> },
-      { path: '/payment/:requestId', element: <PaymentPage /> },
-      { path: '/payment-success', element: <PaymentSuccessPage /> },
-      { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/operator/queue', element: <OperatorQueuePage /> },
-      { path: '/operator/requests/:requestId', element: <OperatorRequestDetailPage /> }
+      { path: '/auth/session', element: <SessionBootstrapPage /> },
+      {
+        path: '/requests/new',
+        element: (
+          <RequireSession>
+            <CreateRequestPage />
+          </RequireSession>
+        )
+      },
+      {
+        path: '/payment/:requestId',
+        element: (
+          <RequireSession>
+            <PaymentPage />
+          </RequireSession>
+        )
+      },
+      {
+        path: '/payment-success',
+        element: (
+          <RequireSession>
+            <PaymentSuccessPage />
+          </RequireSession>
+        )
+      },
+      {
+        path: '/dashboard',
+        element: (
+          <RequireSession>
+            <DashboardPage />
+          </RequireSession>
+        )
+      },
+      {
+        path: '/operator/queue',
+        element: (
+          <RequireSession allowedRoles={['OPERATOR', 'ADMIN']}>
+            <OperatorQueuePage />
+          </RequireSession>
+        )
+      },
+      {
+        path: '/operator/requests/:requestId',
+        element: (
+          <RequireSession allowedRoles={['OPERATOR', 'ADMIN']}>
+            <OperatorRequestDetailPage />
+          </RequireSession>
+        )
+      }
     ]
   }
 ]);

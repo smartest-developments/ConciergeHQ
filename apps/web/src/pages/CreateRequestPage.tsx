@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRequest, fetchCategories } from '../api';
+import { readAuthSession } from '../auth';
 
 const countries = [
   'AT', 'BE', 'BG', 'CH', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR',
@@ -9,11 +10,13 @@ const countries = [
 
 export function CreateRequestPage() {
   const navigate = useNavigate();
+  const session = readAuthSession();
+  const defaultEmail = session?.email ?? localStorage.getItem('acq_user_email') ?? 'demo@acquisitionconcierge.ch';
   const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    userEmail: localStorage.getItem('acq_user_email') ?? 'demo@acquisitionconcierge.ch',
+    userEmail: defaultEmail,
     budgetChf: 1000,
     specs: '',
     category: 'ELECTRONICS',
@@ -61,7 +64,7 @@ export function CreateRequestPage() {
           <input
             type="email"
             value={formData.userEmail}
-            onChange={(event) => setFormData((prev) => ({ ...prev, userEmail: event.target.value }))}
+            readOnly
             required
           />
         </label>

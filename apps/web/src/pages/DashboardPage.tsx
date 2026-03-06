@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { fetchRequests } from '../api';
+import { readAuthSession } from '../auth';
 
 const PAYMENT_NOTICE_STORAGE_KEY = 'acq_payment_notice';
 
@@ -49,11 +49,8 @@ function renderPaymentState(record: DashboardRecord) {
 }
 
 export function DashboardPage() {
-  const [searchParams] = useSearchParams();
-  const queryEmail = searchParams.get('email')?.trim();
-  const initialEmail = queryEmail || localStorage.getItem('acq_user_email') || 'demo@acquisitionconcierge.ch';
-
-  const [email, setEmail] = useState(initialEmail);
+  const session = readAuthSession();
+  const email = session?.email ?? localStorage.getItem('acq_user_email') ?? 'demo@acquisitionconcierge.ch';
   const [records, setRecords] = useState<DashboardRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
@@ -70,8 +67,8 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    localStorage.setItem('acq_user_email', initialEmail);
-    void load(initialEmail);
+    localStorage.setItem('acq_user_email', email);
+    void load(email);
 
     const rawPaymentNotice = localStorage.getItem(PAYMENT_NOTICE_STORAGE_KEY);
     if (rawPaymentNotice) {
@@ -85,24 +82,12 @@ export function DashboardPage() {
       }
       localStorage.removeItem(PAYMENT_NOTICE_STORAGE_KEY);
     }
-  }, []);
-
-  async function onFilter(event: FormEvent) {
-    event.preventDefault();
-    localStorage.setItem('acq_user_email', email);
-    await load(email);
-  }
+  }, [email]);
 
   return (
     <section>
       <h2>Requests Dashboard</h2>
-      <form onSubmit={onFilter} className="card inline-form">
-        <label>
-          User email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <button type="submit">Refresh</button>
-      </form>
+      <p className="card">Session customer: {email}</p>
 
       {error ? <p className="error">{error}</p> : null}
       {paymentNotice ? (

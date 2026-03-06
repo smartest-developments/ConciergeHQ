@@ -200,9 +200,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/routes`, `apps/api/tests`
 - id: ACQ-AUTH-001B
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Add web route guards + auth bootstrap shell so operator/customer pages require active session before data fetch.
-  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+  Evidence: `apps/web/src/auth.tsx`, `apps/web/src/router.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`
 - id: ACQ-AUTH-002
   priority: P1
   status: TODO

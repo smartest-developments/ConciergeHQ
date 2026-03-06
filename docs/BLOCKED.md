@@ -14,3 +14,4 @@ Automation run for task planning updates is partially blocked by filesystem poli
 
 ## Next step
 Run with write access to `/plan` so backlog/progress updates can be committed together with the code increment.
+- 2026-03-06T09:21:47+0100: automation sandbox cannot write in this repository (`Operation not permitted`), so backlog/code/doc updates were skipped this run.

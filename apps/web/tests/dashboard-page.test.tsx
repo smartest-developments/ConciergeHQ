@@ -29,6 +29,10 @@ describe('DashboardPage', () => {
       }
     });
     mockedFetchRequests.mockReset();
+    window.localStorage.setItem(
+      'acq_auth_session',
+      JSON.stringify({ email: 'buyer@example.com', role: 'CUSTOMER' })
+    );
   });
 
   it('shows retry guidance for unpaid requests', async () => {
@@ -52,7 +56,7 @@ describe('DashboardPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/dashboard?email=buyer@example.com']}>
+      <MemoryRouter initialEntries={['/dashboard']}>
         <DashboardPage />
       </MemoryRouter>
     );
@@ -64,6 +68,7 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('link', { name: 'Retry payment checkout' }).getAttribute('href')).toBe(
       '/payment/42?fee=180'
     );
+    expect(mockedFetchRequests).toHaveBeenCalledWith('buyer@example.com');
   });
 
   it('renders persisted payment cancellation notice once', async () => {

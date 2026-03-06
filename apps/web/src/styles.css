@@ -33,6 +33,14 @@ nav {
   margin: 1rem 0 2rem;
 }
 
+.session-chip {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #2d3c46;
+}
+
 nav a {
   color: #0b5e72;
   text-decoration: none;
