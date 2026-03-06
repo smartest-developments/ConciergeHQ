@@ -97,6 +97,8 @@ describe('OperatorQueuePage', () => {
         country: undefined,
         dateFrom: '2026-03-01T00:00:00.000Z',
         dateTo: '2026-03-05T23:59:59.999Z',
+        sortBy: 'budgetChf',
+        sortDir: 'asc',
         page: 1,
         pageSize: 20
       });
@@ -183,6 +185,8 @@ describe('OperatorQueuePage', () => {
         country: undefined,
         dateFrom: undefined,
         dateTo: undefined,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
         page: 2,
         pageSize: 20
       });

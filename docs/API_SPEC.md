@@ -81,6 +81,8 @@ Supports optional filters and pagination:
 - `country=<ISO2>`
 - `dateFrom=<ISO datetime>`
 - `dateTo=<ISO datetime>`
+- `sortBy=createdAt|budgetChf` (default `createdAt`)
+- `sortDir=asc|desc` (default `desc`)
 - `page=<positive integer>` (default `1`)
 - `pageSize=<1..100>` (default `20`)
 

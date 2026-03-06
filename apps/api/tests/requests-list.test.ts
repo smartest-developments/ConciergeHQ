@@ -39,7 +39,7 @@ describe('GET /api/requests list filters', () => {
     process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins;
   });
 
-  it('applies status/category/country/date filters with pagination', async () => {
+  it('applies status/category/country/date filters with pagination and sorting', async () => {
     const prisma = makePrismaMock();
     prisma.sourcingRequest.count.mockResolvedValue(11);
     prisma.sourcingRequest.findMany.mockResolvedValue([
@@ -62,7 +62,7 @@ describe('GET /api/requests list filters', () => {
     const app = createServer(prisma as never);
     const response = await app.inject({
       method: 'GET',
-      url: '/api/requests?status=SOURCING&category=ELECTRONICS&country=CH&dateFrom=2026-03-01T00:00:00.000Z&dateTo=2026-03-05T23:59:59.999Z&page=2&pageSize=5'
+      url: '/api/requests?status=SOURCING&category=ELECTRONICS&country=CH&dateFrom=2026-03-01T00:00:00.000Z&dateTo=2026-03-05T23:59:59.999Z&sortBy=budgetChf&sortDir=asc&page=2&pageSize=5'
     });
 
     expect(response.statusCode).toBe(200);
@@ -88,6 +88,7 @@ describe('GET /api/requests list filters', () => {
             lte: new Date('2026-03-05T23:59:59.999Z')
           }
         },
+        orderBy: [{ budgetChf: 'asc' }, { createdAt: 'desc' }, { id: 'desc' }],
         skip: 5,
         take: 5
       })
@@ -118,6 +119,46 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/requests?dateFrom=2026-03-05T00:00:00.000Z&dateTo=2026-03-01T00:00:00.000Z'
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual(
+      expect.objectContaining({
+        error: 'VALIDATION_ERROR'
+      })
+    );
+
+    await app.close();
+  });
+
+  it('defaults to createdAt descending sort when no sort params are provided', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.count.mockResolvedValue(0);
+    prisma.sourcingRequest.findMany.mockResolvedValue([]);
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests'
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }]
+      })
+    );
+
+    await app.close();
+  });
+
+  it('returns validation error when sorting query params are invalid', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests?sortBy=updatedAt&sortDir=up'
     });
 
     expect(response.statusCode).toBe(400);

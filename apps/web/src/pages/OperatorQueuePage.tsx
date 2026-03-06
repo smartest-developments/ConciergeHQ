@@ -37,18 +37,6 @@ function getFilterOptions(records: QueueRecord[], key: keyof Pick<QueueRecord, '
   return Array.from(new Set(records.map((record) => record[key]))).sort();
 }
 
-function applyLocalSort(records: QueueRecord[], sortBy: SortBy, sortDirection: SortDirection): QueueRecord[] {
-  const sorted = [...records].sort((left, right) => {
-    if (sortBy === 'budgetChf') {
-      return left.budgetChf - right.budgetChf;
-    }
-
-    return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  });
-
-  return sortDirection === 'desc' ? sorted.reverse() : sorted;
-}
-
 export function OperatorQueuePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<FilterValue>(searchParams.get('status') ?? 'ALL');
@@ -89,10 +77,12 @@ export function OperatorQueuePage() {
         country: countryFilter === 'ALL' ? undefined : countryFilter,
         dateFrom: dateFrom ? new Date(`${dateFrom}T00:00:00.000Z`).toISOString() : undefined,
         dateTo: dateTo ? new Date(`${dateTo}T23:59:59.999Z`).toISOString() : undefined,
+        sortBy,
+        sortDir: sortDirection,
         page: nextPage,
         pageSize
       });
-      setRecords(applyLocalSort(response.requests, sortBy, sortDirection));
+      setRecords(response.requests);
       setPage(response.pagination?.page ?? nextPage);
       setTotal(response.pagination?.total ?? response.requests.length);
       setTotalPages(Math.max(response.pagination?.totalPages ?? 1, 1));

@@ -25,6 +25,8 @@ const listRequestsQuerySchema = z
     country: z.enum(allowedCountries).optional(),
     dateFrom: z.coerce.date().optional(),
     dateTo: z.coerce.date().optional(),
+    sortBy: z.enum(['createdAt', 'budgetChf']).default('createdAt'),
+    sortDir: z.enum(['asc', 'desc']).default('desc'),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(20)
   })
@@ -174,13 +176,18 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       ...(parsed.data.country ? { country: parsed.data.country } : {}),
       ...(createdAt ? { createdAt } : {})
     };
+    const sortDirection = parsed.data.sortDir;
+    const orderBy =
+      parsed.data.sortBy === 'budgetChf'
+        ? [{ budgetChf: sortDirection }, { createdAt: 'desc' as const }, { id: 'desc' as const }]
+        : [{ createdAt: sortDirection }, { id: 'desc' as const }];
     const offset = (parsed.data.page - 1) * parsed.data.pageSize;
 
     const [total, requests] = await Promise.all([
       app.prisma.sourcingRequest.count({ where }),
       app.prisma.sourcingRequest.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: offset,
         take: parsed.data.pageSize,
         include: {

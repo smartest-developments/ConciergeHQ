@@ -66,6 +66,8 @@ export type FetchRequestsParams = {
   country?: string;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: 'createdAt' | 'budgetChf';
+  sortDir?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 };
