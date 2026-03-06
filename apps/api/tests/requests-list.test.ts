@@ -288,6 +288,79 @@ describe('GET /api/requests list filters', () => {
     await app.close();
   });
 
+  it('transitions request to completed when proposal is published', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 77,
+      status: RequestStatus.PROPOSAL_PUBLISHED
+    });
+    prisma.sourcingRequest.update.mockResolvedValue({
+      id: 77,
+      status: RequestStatus.COMPLETED,
+      updatedAt: new Date('2026-03-06T09:10:00.000Z')
+    });
+    prisma.$transaction.mockImplementation(async (callback) => callback(prisma));
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/77/status',
+      payload: { toStatus: 'COMPLETED' }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.update).toHaveBeenCalledWith({
+      where: { id: 77 },
+      data: { status: 'COMPLETED' }
+    });
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId: 77,
+        fromStatus: 'PROPOSAL_PUBLISHED',
+        toStatus: 'COMPLETED'
+      })
+    });
+
+    await app.close();
+  });
+
+  it('transitions request to canceled from sourcing', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 91,
+      status: RequestStatus.SOURCING
+    });
+    prisma.sourcingRequest.update.mockResolvedValue({
+      id: 91,
+      status: RequestStatus.CANCELED,
+      updatedAt: new Date('2026-03-06T09:12:00.000Z')
+    });
+    prisma.$transaction.mockImplementation(async (callback) => callback(prisma));
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/91/status',
+      payload: { toStatus: 'CANCELED', reason: 'Customer requested cancellation' }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.update).toHaveBeenCalledWith({
+      where: { id: 91 },
+      data: { status: 'CANCELED' }
+    });
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId: 91,
+        fromStatus: 'SOURCING',
+        toStatus: 'CANCELED',
+        reason: 'Customer requested cancellation'
+      })
+    });
+
+    await app.close();
+  });
+
   it('rejects invalid status transition payload and transitions', async () => {
     const prisma = makePrismaMock();
     prisma.sourcingRequest.findUnique.mockResolvedValue({
