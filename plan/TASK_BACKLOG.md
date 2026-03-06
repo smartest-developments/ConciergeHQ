@@ -178,9 +178,14 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/tests`
 - id: ACQ-AUTO-018
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add operator queue sort controls (`createdAt`, `budgetChf`) and persist filter state in URL query params for shareable triage links.
   Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/tests/operator-queue-page.test.tsx`
+- id: ACQ-AUTO-019
+  priority: P1
+  status: TODO
+  DoD: Extend `GET /api/requests` with deterministic server-side sorting (`sortBy=createdAt|budgetChf`, `sortDir=asc|desc`) so operator triage ordering is consistent across clients.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 
 ## AUTH_ADMIN_ESSENTIALS
 - id: ACQ-AUTH-001

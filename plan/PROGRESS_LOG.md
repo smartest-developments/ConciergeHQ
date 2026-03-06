@@ -1,5 +1,8 @@
 # PROGRESS_LOG
 
+## 2026-03-06
+- 2026-03-06T02:05:00+0100 — ACQ-AUTO-018 Operator queue URL-state + sorting controls — Result: added operator queue sort controls (`createdAt|budgetChf`, `asc|desc`), persisted filters/sort/pagination into URL query params for shareable triage links, and expanded UI tests to assert query-state behavior and page navigation persistence. Marked `ACQ-AUTO-018` DONE and added backend follow-up `ACQ-AUTO-019` for server-side deterministic sorting. — Next: ACQ-AUTH-001 secure session + RBAC foundation for operator/admin surfaces.
+
 ## 2026-03-05
 - 2026-03-06T00:55:00+0100 — ACQ-ADMIN-001C Operator queue API-bound filtering + pagination UI — Result: replaced client-only queue filtering with API-backed query params (`status/category/country/dateFrom/dateTo/page/pageSize`), added date-range controls, pagination navigation, and expanded web tests for filter payload + page transitions. Updated API client typing to support query object and pagination metadata. — Next: ACQ-AUTH-001 secure session + RBAC foundation for operator/admin surfaces.
 - 2026-03-05T23:20:00+0100 — ACQ-ADMIN-001B Operator queue API filters + pagination — Result: extended `GET /api/requests` with server-side queue filters (`status`, `category`, `country`, `dateFrom`, `dateTo`) and paginated contract (`page`, `pageSize`, `total`, `totalPages`), plus route test coverage for filter and date-range validation behavior. — Next: ACQ-ADMIN-001C bind operator queue UI to API-backed filtering + pagination controls.

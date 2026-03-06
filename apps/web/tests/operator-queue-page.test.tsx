@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperatorQueuePage } from '../src/pages/OperatorQueuePage';
 import { fetchRequests } from '../src/api';
@@ -10,8 +10,23 @@ vi.mock('../src/api', () => ({
 
 const mockedFetchRequests = vi.mocked(fetchRequests);
 
+function LocationSearchProbe() {
+  const location = useLocation();
+  return <output data-testid="location-search">{location.search}</output>;
+}
+
+function renderQueuePage(initialPath = '/operator/queue') {
+  render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <OperatorQueuePage />
+      <LocationSearchProbe />
+    </MemoryRouter>
+  );
+}
+
 describe('OperatorQueuePage', () => {
   beforeEach(() => {
+    cleanup();
     mockedFetchRequests.mockReset();
   });
 
@@ -51,11 +66,7 @@ describe('OperatorQueuePage', () => {
         }
       });
 
-    render(
-      <MemoryRouter>
-        <OperatorQueuePage />
-      </MemoryRouter>
-    );
+    renderQueuePage();
 
     await waitFor(() => {
       expect(screen.getByText('Visible requests: 1 (total matching: 1)')).toBeTruthy();
@@ -69,6 +80,12 @@ describe('OperatorQueuePage', () => {
     });
     fireEvent.change(screen.getByLabelText('Date to'), {
       target: { value: '2026-03-05' }
+    });
+    fireEvent.change(screen.getByLabelText('Sort by'), {
+      target: { value: 'budgetChf' }
+    });
+    fireEvent.change(screen.getByLabelText('Direction'), {
+      target: { value: 'asc' }
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply filters' }));
@@ -86,6 +103,14 @@ describe('OperatorQueuePage', () => {
     });
 
     expect(screen.getByText('No requests match the selected filters.')).toBeTruthy();
+    await waitFor(() => {
+      const search = screen.getByTestId('location-search').textContent ?? '';
+      expect(search).toContain('status=FEE_PENDING');
+      expect(search).toContain('dateFrom=2026-03-01');
+      expect(search).toContain('dateTo=2026-03-05');
+      expect(search).toContain('sortBy=budgetChf');
+      expect(search).toContain('sortDir=asc');
+    });
   });
 
   it('loads next page through API pagination', async () => {
@@ -139,11 +164,7 @@ describe('OperatorQueuePage', () => {
         }
       });
 
-    render(
-      <MemoryRouter>
-        <OperatorQueuePage />
-      </MemoryRouter>
-    );
+    renderQueuePage();
 
     await waitFor(() => {
       expect(screen.getByText('Page 1 of 2')).toBeTruthy();
@@ -169,5 +190,8 @@ describe('OperatorQueuePage', () => {
 
     expect(screen.getByText('Page 2 of 2')).toBeTruthy();
     expect(screen.getByText('b@example.com')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByTestId('location-search').textContent).toContain('page=2');
+    });
   });
 });

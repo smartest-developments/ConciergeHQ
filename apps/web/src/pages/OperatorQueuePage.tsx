@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchRequests } from '../api';
 
 type QueueRecord = {
@@ -12,23 +13,72 @@ type QueueRecord = {
 };
 
 type FilterValue = 'ALL' | string;
+type SortBy = 'createdAt' | 'budgetChf';
+type SortDirection = 'asc' | 'desc';
+
+const DEFAULT_SORT_BY: SortBy = 'createdAt';
+const DEFAULT_SORT_DIRECTION: SortDirection = 'desc';
+
+function parsePositiveInt(value: string | null, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseSortBy(value: string | null): SortBy {
+  return value === 'budgetChf' ? 'budgetChf' : DEFAULT_SORT_BY;
+}
+
+function parseSortDirection(value: string | null): SortDirection {
+  return value === 'asc' ? 'asc' : DEFAULT_SORT_DIRECTION;
+}
 
 function getFilterOptions(records: QueueRecord[], key: keyof Pick<QueueRecord, 'status' | 'category' | 'country'>) {
   return Array.from(new Set(records.map((record) => record[key]))).sort();
 }
 
+function applyLocalSort(records: QueueRecord[], sortBy: SortBy, sortDirection: SortDirection): QueueRecord[] {
+  const sorted = [...records].sort((left, right) => {
+    if (sortBy === 'budgetChf') {
+      return left.budgetChf - right.budgetChf;
+    }
+
+    return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+  });
+
+  return sortDirection === 'desc' ? sorted.reverse() : sorted;
+}
+
 export function OperatorQueuePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<FilterValue>(searchParams.get('status') ?? 'ALL');
+  const [categoryFilter, setCategoryFilter] = useState<FilterValue>(searchParams.get('category') ?? 'ALL');
+  const [countryFilter, setCountryFilter] = useState<FilterValue>(searchParams.get('country') ?? 'ALL');
+  const [dateFrom, setDateFrom] = useState(searchParams.get('dateFrom') ?? '');
+  const [dateTo, setDateTo] = useState(searchParams.get('dateTo') ?? '');
+  const [sortBy, setSortBy] = useState<SortBy>(parseSortBy(searchParams.get('sortBy')));
+  const [sortDirection, setSortDirection] = useState<SortDirection>(parseSortDirection(searchParams.get('sortDir')));
+  const [page, setPage] = useState(parsePositiveInt(searchParams.get('page'), 1));
   const [records, setRecords] = useState<QueueRecord[]>([]);
-  const [statusFilter, setStatusFilter] = useState<FilterValue>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState<FilterValue>('ALL');
-  const [countryFilter, setCountryFilter] = useState<FilterValue>('ALL');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+
+  function persistQuery(nextPage: number, nextSortBy = sortBy, nextSortDirection = sortDirection) {
+    const nextParams = new URLSearchParams();
+
+    if (statusFilter !== 'ALL') nextParams.set('status', statusFilter);
+    if (categoryFilter !== 'ALL') nextParams.set('category', categoryFilter);
+    if (countryFilter !== 'ALL') nextParams.set('country', countryFilter);
+    if (dateFrom) nextParams.set('dateFrom', dateFrom);
+    if (dateTo) nextParams.set('dateTo', dateTo);
+    if (nextPage > 1) nextParams.set('page', String(nextPage));
+    if (nextSortBy !== DEFAULT_SORT_BY) nextParams.set('sortBy', nextSortBy);
+    if (nextSortDirection !== DEFAULT_SORT_DIRECTION) nextParams.set('sortDir', nextSortDirection);
+
+    setSearchParams(nextParams, { replace: true });
+  }
 
   async function load(nextPage: number) {
     try {
@@ -42,17 +92,19 @@ export function OperatorQueuePage() {
         page: nextPage,
         pageSize
       });
-      setRecords(response.requests);
+      setRecords(applyLocalSort(response.requests, sortBy, sortDirection));
       setPage(response.pagination?.page ?? nextPage);
       setTotal(response.pagination?.total ?? response.requests.length);
       setTotalPages(Math.max(response.pagination?.totalPages ?? 1, 1));
+      persistQuery(nextPage);
     } catch {
       setError('Could not load operator queue.');
     }
   }
 
   useEffect(() => {
-    void load(1);
+    void load(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const statusOptions = useMemo(() => getFilterOptions(records, 'status'), [records]);
@@ -117,6 +169,21 @@ export function OperatorQueuePage() {
         </label>
 
         <button type="submit">Apply filters</button>
+        <label>
+          Sort by
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}>
+            <option value="createdAt">Created date</option>
+            <option value="budgetChf">Budget (CHF)</option>
+          </select>
+        </label>
+
+        <label>
+          Direction
+          <select value={sortDirection} onChange={(event) => setSortDirection(event.target.value as SortDirection)}>
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </label>
       </form>
 
       {error ? <p className="error">{error}</p> : null}
