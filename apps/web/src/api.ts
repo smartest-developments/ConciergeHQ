@@ -159,3 +159,21 @@ export async function fetchRequestDetail(requestId: number) {
     }>;
   }>;
 }
+
+export async function transitionRequestStatus(
+  requestId: number,
+  payload: { toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED'; reason?: string }
+) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to transition request status');
+  }
+
+  return response.json() as Promise<{ id: number; status: string; transitionedAt: string }>;
+}

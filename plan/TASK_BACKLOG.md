@@ -245,12 +245,12 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/web/src/pages/OperatorQueuePage.tsx`
 - id: ACQ-ADMIN-002B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add allowed state-transition action panel on request detail (move to `SOURCING`, `COMPLETED`, or `CANCELED`) with API contract validation.
-  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/api/src/routes/requests.ts`, `apps/api/tests`
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-002C
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Add operator transition confirmation UX with reason capture and optimistic refresh of timeline/proposal sections.
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
 - id: ACQ-ADMIN-003

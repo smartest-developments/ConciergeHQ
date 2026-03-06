@@ -187,6 +187,42 @@ Responses:
 - `200` detail payload
 - `404` with `{ "error": "REQUEST_NOT_FOUND" }`
 
+## POST /api/requests/:id/status
+Operator/admin transition endpoint for explicit manual status moves used by request detail triage actions.
+
+Example request:
+```json
+{
+  "toStatus": "SOURCING"
+}
+```
+
+Supported `toStatus` values:
+- `SOURCING`
+- `COMPLETED`
+- `CANCELED`
+
+Transition guard:
+- `FEE_PAID -> SOURCING|CANCELED`
+- `SOURCING -> CANCELED`
+- `PROPOSAL_PUBLISHED -> COMPLETED|CANCELED`
+- `PROPOSAL_EXPIRED -> CANCELED`
+
+Example response:
+```json
+{
+  "id": 42,
+  "status": "SOURCING",
+  "transitionedAt": "2026-03-06T10:00:00.000Z"
+}
+```
+
+Responses:
+- `200` transition accepted
+- `400` with `{ "error": "VALIDATION_ERROR" }` when payload is invalid
+- `404` with `{ "error": "REQUEST_NOT_FOUND" }`
+- `409` with `{ "error": "INVALID_STATUS_TRANSITION" }` when transition is disallowed
+
 ## POST /api/requests/:id/checkout
 Create a PSP (Stripe Checkout) session for the sourcing fee.
 

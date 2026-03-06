@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchRequestDetail } from '../api';
+import { fetchRequestDetail, transitionRequestStatus } from '../api';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
 
@@ -9,14 +9,15 @@ export function OperatorRequestDetailPage() {
   const requestId = Number(params.requestId);
   const [payload, setPayload] = useState<RequestDetailPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  useEffect(() => {
+  const reloadDetail = useCallback(() => {
     if (!Number.isInteger(requestId) || requestId <= 0) {
       setError('Invalid request id.');
       return;
     }
 
-    fetchRequestDetail(requestId)
+    return fetchRequestDetail(requestId)
       .then((response) => {
         setPayload(response);
         setError(null);
@@ -25,6 +26,39 @@ export function OperatorRequestDetailPage() {
         setError('Could not load request detail.');
       });
   }, [requestId]);
+
+  useEffect(() => {
+    void reloadDetail();
+  }, [requestId]);
+
+  const transitionActionMap: Record<string, Array<{ label: string; toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED' }>> = {
+    FEE_PAID: [
+      { label: 'Move to sourcing', toStatus: 'SOURCING' },
+      { label: 'Cancel request', toStatus: 'CANCELED' }
+    ],
+    SOURCING: [{ label: 'Cancel request', toStatus: 'CANCELED' }],
+    PROPOSAL_PUBLISHED: [
+      { label: 'Mark completed', toStatus: 'COMPLETED' },
+      { label: 'Cancel request', toStatus: 'CANCELED' }
+    ],
+    PROPOSAL_EXPIRED: [{ label: 'Cancel request', toStatus: 'CANCELED' }]
+  };
+
+  const availableActions = payload ? transitionActionMap[payload.request.status] ?? [] : [];
+
+  const onTransition = async (toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED') => {
+    if (!payload) return;
+
+    setIsTransitioning(true);
+    try {
+      await transitionRequestStatus(payload.request.id, { toStatus });
+      await reloadDetail();
+    } catch {
+      setError('Could not transition request status.');
+    } finally {
+      setIsTransitioning(false);
+    }
+  };
 
   return (
     <section>
@@ -79,6 +113,26 @@ export function OperatorRequestDetailPage() {
               ))}
               {payload.statusTimeline.length === 0 ? <li>No status events logged yet.</li> : null}
             </ul>
+          </article>
+
+          <article className="card">
+            <h3>Transition Actions</h3>
+            {availableActions.length === 0 ? (
+              <p>No manual transition actions available for the current state.</p>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {availableActions.map((action) => (
+                  <button
+                    key={action.toStatus}
+                    type="button"
+                    onClick={() => void onTransition(action.toStatus)}
+                    disabled={isTransitioning}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </article>
 
           <article className="card">
