@@ -170,4 +170,100 @@ describe('GET /api/requests list filters', () => {
 
     await app.close();
   });
+
+  it('returns request detail with timeline and proposal history', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 55,
+      user: { email: 'detail@example.com' },
+      budgetChf: 1850,
+      sourcingFeeChf: 185,
+      specs: 'Need a refurbished espresso machine with warranty.',
+      category: 'HOME_APPLIANCES',
+      country: 'CH',
+      condition: 'USED',
+      urgency: 'STANDARD',
+      status: RequestStatus.PROPOSAL_PUBLISHED,
+      feePaidAt: new Date('2026-03-05T08:10:00.000Z'),
+      createdAt: new Date('2026-03-04T09:00:00.000Z'),
+      updatedAt: new Date('2026-03-05T08:30:00.000Z'),
+      proposals: [
+        {
+          id: 7,
+          merchantName: 'Zurich Appliance Hub',
+          externalUrl: 'https://merchant.example/proposal/7',
+          summary: 'Inspected refurbished unit with 12-month warranty.',
+          publishedAt: new Date('2026-03-05T08:30:00.000Z'),
+          expiresAt: new Date('2026-03-05T10:30:00.000Z'),
+          actedAt: null
+        }
+      ],
+      statusEvents: [
+        {
+          id: 2,
+          fromStatus: RequestStatus.SOURCING,
+          toStatus: RequestStatus.PROPOSAL_PUBLISHED,
+          reason: 'Proposal published by operator',
+          metadata: { proposalId: 7 },
+          occurredAt: new Date('2026-03-05T08:30:00.000Z')
+        }
+      ]
+    });
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests/55'
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.findUnique).toHaveBeenCalledWith({
+      where: { id: 55 },
+      include: {
+        user: { select: { email: true } },
+        proposals: { orderBy: { publishedAt: 'desc' } },
+        statusEvents: { orderBy: { occurredAt: 'desc' } }
+      }
+    });
+
+    expect(response.json()).toEqual(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          id: 55,
+          userEmail: 'detail@example.com',
+          status: 'PROPOSAL_PUBLISHED'
+        }),
+        proposals: [
+          expect.objectContaining({
+            id: 7,
+            merchantName: 'Zurich Appliance Hub'
+          })
+        ],
+        statusTimeline: [
+          expect.objectContaining({
+            id: 2,
+            toStatus: 'PROPOSAL_PUBLISHED'
+          })
+        ]
+      })
+    );
+
+    await app.close();
+  });
+
+  it('returns 404 when request detail is missing', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue(null);
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/requests/9999'
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error: 'REQUEST_NOT_FOUND' });
+
+    await app.close();
+  });
 });

@@ -71,6 +71,7 @@ describe('OperatorQueuePage', () => {
     await waitFor(() => {
       expect(screen.getByText('Visible requests: 1 (total matching: 1)')).toBeTruthy();
     });
+    expect(screen.getByRole('link', { name: 'Open detail' }).getAttribute('href')).toBe('/operator/requests/11');
 
     fireEvent.change(screen.getByLabelText('Status'), {
       target: { value: 'FEE_PENDING' }
@@ -194,6 +195,7 @@ describe('OperatorQueuePage', () => {
 
     expect(screen.getByText('Page 2 of 2')).toBeTruthy();
     expect(screen.getByText('b@example.com')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Open detail' }).getAttribute('href')).toBe('/operator/requests/12');
     await waitFor(() => {
       expect(screen.getByTestId('location-search').textContent).toContain('page=2');
     });

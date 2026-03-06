@@ -235,9 +235,24 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-queue-page.test.tsx`
 - id: ACQ-ADMIN-002
   priority: P1
-  status: TODO
-  DoD: Build admin request detail workspace showing timeline, fee/payment state, and proposal history with allowed transitions.
+  status: IN_PROGRESS
+  DoD: Deliver admin request detail workspace wave (`ACQ-ADMIN-002A..C`) with timeline/payment/proposal context and guarded transition actions.
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`, `docs/STATE_MACHINE.md`
+- id: ACQ-ADMIN-002A
+  priority: P1
+  status: DONE
+  DoD: Add request detail read model (`GET /api/requests/:id`) and operator detail page showing timeline, payment state, and proposal history.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/web/src/pages/OperatorQueuePage.tsx`
+- id: ACQ-ADMIN-002B
+  priority: P1
+  status: TODO
+  DoD: Add allowed state-transition action panel on request detail (move to `SOURCING`, `COMPLETED`, or `CANCELED`) with API contract validation.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/api/src/routes/requests.ts`, `apps/api/tests`
+- id: ACQ-ADMIN-002C
+  priority: P1
+  status: TODO
+  DoD: Add operator transition confirmation UX with reason capture and optimistic refresh of timeline/proposal sections.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
 - id: ACQ-ADMIN-003
   priority: P1
   status: TODO

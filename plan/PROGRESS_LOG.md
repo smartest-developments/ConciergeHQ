@@ -1,6 +1,7 @@
 # PROGRESS_LOG
 
 ## 2026-03-06
+- 2026-03-06T04:25:00+0100 — ACQ-ADMIN-002A Operator request detail workspace read model — Result: added `GET /api/requests/:id` detail contract with timeline + proposal history, wired `/operator/requests/:requestId` UI page, and linked queue rows to detail view for operator triage handoff. Added API + UI test coverage and split `ACQ-ADMIN-002` into `002A..C` (A done, transition actions pending in B/C). — Next: ACQ-ADMIN-002B add guarded transition action panel on request detail.
 - 2026-03-06T02:52:24+0100 — ACQ-AUTO-019 Deterministic server-side queue sorting — Result: extended `GET /api/requests` query contract with `sortBy`/`sortDir`, added deterministic DB ordering (`createdAt|budgetChf` with stable tie-breakers), removed client-side re-sorting from operator queue page, and expanded API/UI tests to assert sorting params are forwarded and honored. Updated API spec and backlog evidence. — Next: ACQ-AUTH-001 secure session + RBAC foundation for operator/admin surfaces.
 - 2026-03-06T02:05:00+0100 — ACQ-AUTO-018 Operator queue URL-state + sorting controls — Result: added operator queue sort controls (`createdAt|budgetChf`, `asc|desc`), persisted filters/sort/pagination into URL query params for shareable triage links, and expanded UI tests to assert query-state behavior and page navigation persistence. Marked `ACQ-AUTO-018` DONE and added backend follow-up `ACQ-AUTO-019` for server-side deterministic sorting. — Next: ACQ-AUTH-001 secure session + RBAC foundation for operator/admin surfaces.
 

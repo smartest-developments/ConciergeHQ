@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchRequests } from '../api';
 
 type QueueRecord = {
@@ -192,6 +192,7 @@ export function OperatorQueuePage() {
               <th>Country</th>
               <th>Budget</th>
               <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -204,11 +205,14 @@ export function OperatorQueuePage() {
                 <td>{record.country}</td>
                 <td>{record.budgetChf} CHF</td>
                 <td>{new Date(record.createdAt).toLocaleString()}</td>
+                <td>
+                  <Link to={`/operator/requests/${record.id}`}>Open detail</Link>
+                </td>
               </tr>
             ))}
             {records.length === 0 ? (
               <tr>
-                <td colSpan={7}>No requests match the selected filters.</td>
+                <td colSpan={8}>No requests match the selected filters.</td>
               </tr>
             ) : null}
           </tbody>

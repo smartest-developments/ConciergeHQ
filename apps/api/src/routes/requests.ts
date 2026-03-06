@@ -237,6 +237,68 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     };
   });
 
+  app.get('/api/requests/:id', async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id },
+      include: {
+        user: { select: { email: true } },
+        proposals: {
+          orderBy: { publishedAt: 'desc' }
+        },
+        statusEvents: {
+          orderBy: { occurredAt: 'desc' }
+        }
+      }
+    });
+
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    return {
+      request: {
+        id: request.id,
+        userEmail: request.user.email,
+        budgetChf: Number(request.budgetChf),
+        sourcingFeeChf: Number(request.sourcingFeeChf),
+        specs: request.specs,
+        category: request.category,
+        country: request.country,
+        condition: request.condition,
+        urgency: request.urgency,
+        status: request.status,
+        feePaidAt: request.feePaidAt,
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt
+      },
+      proposals: request.proposals.map((proposal) => ({
+        id: proposal.id,
+        merchantName: proposal.merchantName,
+        externalUrl: proposal.externalUrl,
+        summary: proposal.summary,
+        publishedAt: proposal.publishedAt,
+        expiresAt: proposal.expiresAt,
+        actedAt: proposal.actedAt
+      })),
+      statusTimeline: request.statusEvents.map((event) => ({
+        id: event.id,
+        fromStatus: event.fromStatus,
+        toStatus: event.toStatus,
+        reason: event.reason,
+        metadata: event.metadata,
+        occurredAt: event.occurredAt
+      }))
+    };
+  });
+
   app.post(
     '/api/requests/:id/checkout',
     {

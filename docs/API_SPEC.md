@@ -138,6 +138,55 @@ Example response:
 Validation notes:
 - `dateTo` must be greater than or equal to `dateFrom`.
 
+## GET /api/requests/:id
+Fetch operator/admin request detail context for triage workflows.
+
+Example response:
+```json
+{
+  "request": {
+    "id": 42,
+    "userEmail": "buyer@example.com",
+    "budgetChf": 1800,
+    "sourcingFeeChf": 180,
+    "specs": "Used road bike, carbon frame, size 56, hydraulic brakes.",
+    "category": "SPORTS_EQUIPMENT",
+    "country": "CH",
+    "condition": "USED",
+    "urgency": "FAST",
+    "status": "PROPOSAL_PUBLISHED",
+    "feePaidAt": "2026-02-21T21:10:00.000Z",
+    "createdAt": "2026-02-21T20:58:00.000Z",
+    "updatedAt": "2026-02-21T21:30:00.000Z"
+  },
+  "proposals": [
+    {
+      "id": 7,
+      "merchantName": "Alpine Bikes",
+      "externalUrl": "https://merchant.example/offer/abc",
+      "summary": "Used road bike, size 56, hydraulic brakes, ready to ship.",
+      "publishedAt": "2026-02-21T21:30:00.000Z",
+      "expiresAt": "2026-02-21T23:30:00.000Z",
+      "actedAt": null
+    }
+  ],
+  "statusTimeline": [
+    {
+      "id": 91,
+      "fromStatus": "SOURCING",
+      "toStatus": "PROPOSAL_PUBLISHED",
+      "reason": "Proposal published by operator",
+      "metadata": { "proposalId": 7 },
+      "occurredAt": "2026-02-21T21:30:00.000Z"
+    }
+  ]
+}
+```
+
+Responses:
+- `200` detail payload
+- `404` with `{ "error": "REQUEST_NOT_FOUND" }`
+
 ## POST /api/requests/:id/checkout
 Create a PSP (Stripe Checkout) session for the sourcing fee.
 

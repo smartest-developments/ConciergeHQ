@@ -116,3 +116,46 @@ export async function fetchRequests(params?: string | FetchRequestsParams) {
     };
   }>;
 }
+
+export async function fetchRequestDetail(requestId: number) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}`);
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to fetch request detail');
+  }
+
+  return response.json() as Promise<{
+    request: {
+      id: number;
+      userEmail: string;
+      budgetChf: number;
+      sourcingFeeChf: number;
+      specs: string;
+      category: string;
+      country: string;
+      condition: string;
+      urgency: string;
+      status: string;
+      feePaidAt: string | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+    proposals: Array<{
+      id: number;
+      merchantName: string;
+      externalUrl: string;
+      summary: string | null;
+      publishedAt: string;
+      expiresAt: string;
+      actedAt: string | null;
+    }>;
+    statusTimeline: Array<{
+      id: number;
+      fromStatus: string | null;
+      toStatus: string;
+      reason: string | null;
+      metadata: Record<string, unknown> | null;
+      occurredAt: string;
+    }>;
+  }>;
+}
