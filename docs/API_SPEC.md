@@ -307,3 +307,20 @@ Additional responses:
   - `GET /api/requests` forces customer scope to session owner
   - `GET /api/requests/:id` enforces customer ownership
   - `POST /api/requests/:id/status` and `POST /api/requests/:id/proposals` use session role precedence with temporary `x-operator-role` fallback (`ACQ-AUTH-001A2`)
+
+## GET /api/auth/me
+Resolve active authenticated user from `acq_session` cookie.
+
+Responses:
+- `200` with `{ "user": { "id": <number>, "email": <string>, "role": "CUSTOMER|OPERATOR|ADMIN" } }`
+- `401` with `{ "error": "AUTH_REQUIRED" }` when session is missing, expired, or revoked.
+
+## POST /api/auth/logout
+Invalidate current cookie session (idempotent).
+
+Responses:
+- `204` with `Set-Cookie: acq_session=; ... Max-Age=0`.
+
+Behavior:
+- If a session token is present, matching non-revoked DB session is revoked (`revokedAt=now`).
+- Endpoint still returns `204` when no session cookie is present.

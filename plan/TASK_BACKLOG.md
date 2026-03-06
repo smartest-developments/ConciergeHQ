@@ -449,3 +449,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Implement customer auth API (`POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`) with password hashing and brute-force protection.
   Evidence: `apps/api/src/routes`, `docs/API_SPEC.md`
+
+## RUN_UPDATE_2026-03-06T17:22:41+0100
+- id: ACQ-AUTH-002
+  priority: P1
+  status: IN_PROGRESS
+  Note: Split to unblock API auth integration in 1-3h increments.
+- id: ACQ-AUTH-002A
+  priority: P1
+  status: DONE
+  DoD: Add session-backed `GET /api/auth/me` and `POST /api/auth/logout` contracts with deterministic `401 AUTH_REQUIRED` and cookie revocation behavior.
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `plan/PROGRESS_LOG.md`.
+- id: ACQ-AUTH-002B
+  priority: P1
+  status: TODO
+  DoD: Add credential auth endpoints (`POST /api/auth/register`, `POST /api/auth/login`) with password hashing and brute-force protections.
+  Evidence target: `apps/api/src/routes/auth.ts`, auth route tests, API/security docs.

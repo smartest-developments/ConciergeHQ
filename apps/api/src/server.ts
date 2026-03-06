@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client';
 import { prisma as defaultPrisma } from './lib/prisma.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerCategoriesRoute } from './routes/categories.js';
+import { registerAuthRoutes } from './routes/auth.js';
 import { registerRequestRoutes } from './routes/requests.js';
 import { startProposalExpiryJob } from './jobs/proposalExpiry.js';
 import { getCorsConfig } from './lib/runtimeConfig.js';
@@ -33,6 +34,7 @@ export function createServer(prismaClient: PrismaClient = defaultPrisma) {
 
   app.register(registerHealthRoute);
   app.register(registerCategoriesRoute);
+  app.register(registerAuthRoutes);
   app.register(registerRequestRoutes);
 
   const expiryJob = startProposalExpiryJob(app);
