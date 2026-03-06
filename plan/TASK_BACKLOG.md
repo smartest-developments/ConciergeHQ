@@ -282,7 +282,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## RELEASE_READINESS
 - id: ACQ-REL-001
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Publish release checklist with explicit go/no-go criteria (functional, security, legal, ops) and sign-off owners.
   Evidence: `docs/RELEASE_CHECKLIST.md`
 - id: ACQ-REL-002
