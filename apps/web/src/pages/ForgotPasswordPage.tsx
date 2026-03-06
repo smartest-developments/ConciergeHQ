@@ -26,8 +26,12 @@ export function ForgotPasswordPage() {
     try {
       await requestPasswordReset(normalizedEmail);
       setStatus('If this email exists, a reset link will be sent.');
-    } catch {
-      setError('Unable to submit password reset request. Please try again.');
+    } catch (requestError) {
+      if (requestError instanceof Error && requestError.message === 'VALIDATION_ERROR') {
+        setError('Email is invalid.');
+      } else {
+        setError('Unable to submit password reset request. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -41,7 +45,13 @@ export function ForgotPasswordPage() {
       <form className="card form-grid" onSubmit={onSubmit}>
         <label>
           Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            disabled={submitting}
+          />
         </label>
         {error ? <p className="error">{error}</p> : null}
         <button type="submit" disabled={submitting}>

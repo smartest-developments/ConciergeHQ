@@ -186,6 +186,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: Extend `GET /api/requests` with deterministic server-side sorting (`sortBy=createdAt|budgetChf`, `sortDir=asc|desc`) so operator triage ordering is consistent across clients.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/tests/operator-queue-page.test.tsx`, `docs/API_SPEC.md`
+- id: ACQ-AUTO-020
+  priority: P1
+  status: DONE
+  DoD: Harden forgot/reset password UX with deterministic API-error messaging and disabled-submit guards while requests are in flight.
+  Evidence: `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`
 
 ## AUTH_ADMIN_ESSENTIALS
 - id: ACQ-AUTH-001

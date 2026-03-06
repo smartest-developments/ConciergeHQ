@@ -57,7 +57,13 @@ export function ResetPasswordPage() {
       <form className="card form-grid" onSubmit={onSubmit}>
         <label>
           New Password
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            disabled={submitting}
+          />
         </label>
         <label>
           Confirm New Password
@@ -66,6 +72,7 @@ export function ResetPasswordPage() {
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             required
+            disabled={submitting}
           />
         </label>
         {error ? <p className="error">{error}</p> : null}
