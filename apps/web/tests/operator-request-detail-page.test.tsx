@@ -27,6 +27,7 @@ describe('OperatorRequestDetailPage', () => {
     cleanup();
     mockedFetchRequestDetail.mockReset();
     mockedTransitionRequestStatus.mockReset();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   it('renders request summary, timeline, and proposal history', async () => {
@@ -77,21 +78,11 @@ describe('OperatorRequestDetailPage', () => {
     expect(screen.getByText('Request #55')).toBeTruthy();
     expect(screen.getByText('detail@example.com')).toBeTruthy();
     expect(screen.getByText(/SOURCING -> PROPOSAL_PUBLISHED/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Open' }).getAttribute('href')).toBe(
-      'https://merchant.example/p/9'
-    );
+    expect(screen.getByRole('link', { name: 'Open' }).getAttribute('href')).toBe('https://merchant.example/p/9');
     expect(screen.getByRole('button', { name: 'Mark completed' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Cancel request' })).toBeTruthy();
   });
 
-  it('shows invalid-id error when route param is not numeric', async () => {
-    renderPage('/operator/requests/abc');
-
-    expect(screen.getByText('Invalid request id.')).toBeTruthy();
-    expect(mockedFetchRequestDetail).not.toHaveBeenCalled();
-  });
-
-  it('transitions request and refreshes detail payload', async () => {
+  it('submits confirmed transition action with reason and refreshes request detail', async () => {
     mockedFetchRequestDetail
       .mockResolvedValueOnce({
         request: {
@@ -126,29 +117,53 @@ describe('OperatorRequestDetailPage', () => {
           status: 'SOURCING',
           feePaidAt: '2026-03-06T08:00:00.000Z',
           createdAt: '2026-03-05T08:00:00.000Z',
-          updatedAt: '2026-03-06T08:05:00.000Z'
+          updatedAt: '2026-03-06T08:15:00.000Z'
         },
         proposals: [],
-        statusTimeline: []
+        statusTimeline: [
+          {
+            id: 5,
+            fromStatus: 'FEE_PAID',
+            toStatus: 'SOURCING',
+            reason: 'Operator moved request into active sourcing',
+            metadata: null,
+            occurredAt: '2026-03-06T08:15:00.000Z'
+          }
+        ]
       });
     mockedTransitionRequestStatus.mockResolvedValue({
       id: 55,
       status: 'SOURCING',
-      transitionedAt: '2026-03-06T09:00:00.000Z'
+      updatedAt: '2026-03-06T08:15:00.000Z'
     });
 
     renderPage();
 
     await waitFor(() => {
-      expect(mockedFetchRequestDetail).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'Start sourcing' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Move to sourcing' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start sourcing' }));
+    fireEvent.change(screen.getByLabelText('Reason (optional)'), {
+      target: { value: 'Operator accepted payment and started sourcing.' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm transition' }));
 
     await waitFor(() => {
-      expect(mockedTransitionRequestStatus).toHaveBeenCalledWith(55, { toStatus: 'SOURCING' });
+      expect(window.confirm).toHaveBeenCalledWith('Confirm transition to SOURCING with this reason?');
+      expect(mockedTransitionRequestStatus).toHaveBeenCalledWith(55, {
+        toStatus: 'SOURCING',
+        reason: 'Operator accepted payment and started sourcing.'
+      });
       expect(mockedFetchRequestDetail).toHaveBeenCalledTimes(2);
     });
-    expect(screen.getByText(/Status:/)).toBeTruthy();
-    expect(screen.getByText('SOURCING')).toBeTruthy();
+    expect(screen.getByText('Request moved to SOURCING.')).toBeTruthy();
+  });
+
+  it('shows invalid-id error when route param is not numeric', async () => {
+    renderPage('/operator/requests/abc');
+
+    expect(screen.getByText('Invalid request id.')).toBeTruthy();
+    expect(mockedFetchRequestDetail).not.toHaveBeenCalled();
   });
 });

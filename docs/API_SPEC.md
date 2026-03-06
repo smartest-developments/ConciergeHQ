@@ -193,7 +193,8 @@ Operator/admin transition endpoint for explicit manual status moves used by requ
 Example request:
 ```json
 {
-  "toStatus": "SOURCING"
+  "toStatus": "SOURCING",
+  "reason": "Operator confirmed fee reception and sourcing handoff."
 }
 ```
 
@@ -213,7 +214,7 @@ Example response:
 {
   "id": 42,
   "status": "SOURCING",
-  "transitionedAt": "2026-03-06T10:00:00.000Z"
+  "updatedAt": "2026-03-06T10:00:00.000Z"
 }
 ```
 

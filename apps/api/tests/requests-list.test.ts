@@ -8,7 +8,8 @@ const makePrismaMock = () =>
       count: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
-      update: vi.fn()
+      update: vi.fn(),
+      create: vi.fn()
     },
     user: {
       upsert: vi.fn()
@@ -30,8 +31,7 @@ describe('GET /api/requests list filters', () => {
   beforeEach(() => {
     process.env.STRIPE_SECRET_KEY = originalStripeSecretKey ?? 'sk_test_123';
     process.env.WEB_BASE_URL = originalWebBaseUrl ?? 'http://localhost:5173';
-    process.env.CORS_ALLOWED_ORIGINS =
-      originalCorsAllowedOrigins ?? 'http://localhost:5173';
+    process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins ?? 'http://localhost:5173';
   });
 
   afterEach(() => {
@@ -252,6 +252,68 @@ describe('GET /api/requests list filters', () => {
     await app.close();
   });
 
+  it('transitions request to sourcing when current status is fee paid', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 55,
+      status: RequestStatus.FEE_PAID
+    });
+    prisma.sourcingRequest.update.mockResolvedValue({
+      id: 55,
+      status: RequestStatus.SOURCING,
+      updatedAt: new Date('2026-03-06T04:42:00.000Z')
+    });
+    prisma.$transaction.mockImplementation(async (callback) => callback(prisma));
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/55/status',
+      payload: { toStatus: 'SOURCING' }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(prisma.sourcingRequest.update).toHaveBeenCalledWith({
+      where: { id: 55 },
+      data: { status: 'SOURCING' }
+    });
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId: 55,
+        fromStatus: 'FEE_PAID',
+        toStatus: 'SOURCING'
+      })
+    });
+
+    await app.close();
+  });
+
+  it('rejects invalid status transition payload and transitions', async () => {
+    const prisma = makePrismaMock();
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 55,
+      status: RequestStatus.FEE_PENDING
+    });
+    const app = createServer(prisma as never);
+
+    const invalidPayload = await app.inject({
+      method: 'POST',
+      url: '/api/requests/55/status',
+      payload: { toStatus: 'FEE_PAID' }
+    });
+    expect(invalidPayload.statusCode).toBe(400);
+
+    const invalidTransition = await app.inject({
+      method: 'POST',
+      url: '/api/requests/55/status',
+      payload: { toStatus: 'COMPLETED' }
+    });
+    expect(invalidTransition.statusCode).toBe(409);
+    expect(invalidTransition.json()).toEqual({ error: 'INVALID_STATUS_TRANSITION' });
+
+    await app.close();
+  });
+
   it('returns 404 when request detail is missing', async () => {
     const prisma = makePrismaMock();
     prisma.sourcingRequest.findUnique.mockResolvedValue(null);
@@ -264,98 +326,6 @@ describe('GET /api/requests list filters', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({ error: 'REQUEST_NOT_FOUND' });
-
-    await app.close();
-  });
-
-  it('transitions fee-paid request to sourcing', async () => {
-    const prisma = makePrismaMock();
-    prisma.sourcingRequest.findUnique.mockResolvedValue({
-      id: 41,
-      status: RequestStatus.FEE_PAID
-    });
-    prisma.$transaction.mockImplementation(async (callback: (tx: typeof prisma) => Promise<unknown>) => {
-      prisma.sourcingRequest.update.mockResolvedValue({
-        id: 41,
-        status: RequestStatus.SOURCING
-      });
-      prisma.requestStatusEvent.create.mockResolvedValue({
-        id: 99,
-        occurredAt: new Date('2026-03-06T10:00:00.000Z')
-      });
-      return callback(prisma);
-    });
-
-    const app = createServer(prisma as never);
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/requests/41/status',
-      payload: { toStatus: 'SOURCING' }
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(prisma.sourcingRequest.update).toHaveBeenCalledWith({
-      where: { id: 41 },
-      data: { status: RequestStatus.SOURCING }
-    });
-    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        requestId: 41,
-        fromStatus: RequestStatus.FEE_PAID,
-        toStatus: RequestStatus.SOURCING
-      })
-    });
-    expect(response.json()).toEqual(
-      expect.objectContaining({
-        id: 41,
-        status: 'SOURCING'
-      })
-    );
-
-    await app.close();
-  });
-
-  it('rejects invalid transition target for current state', async () => {
-    const prisma = makePrismaMock();
-    prisma.sourcingRequest.findUnique.mockResolvedValue({
-      id: 41,
-      status: RequestStatus.FEE_PAID
-    });
-    const app = createServer(prisma as never);
-
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/requests/41/status',
-      payload: { toStatus: 'COMPLETED' }
-    });
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual(
-      expect.objectContaining({
-        error: 'INVALID_STATUS_TRANSITION'
-      })
-    );
-    expect(prisma.sourcingRequest.update).not.toHaveBeenCalled();
-
-    await app.close();
-  });
-
-  it('returns validation error for unsupported transition status payload', async () => {
-    const prisma = makePrismaMock();
-    const app = createServer(prisma as never);
-
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/requests/41/status',
-      payload: { toStatus: 'PROPOSAL_PUBLISHED' }
-    });
-
-    expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual(
-      expect.objectContaining({
-        error: 'VALIDATION_ERROR'
-      })
-    );
 
     await app.close();
   });

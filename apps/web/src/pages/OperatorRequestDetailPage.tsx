@@ -1,60 +1,151 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchRequestDetail, transitionRequestStatus } from '../api';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
+type TransitionStatus = 'SOURCING' | 'COMPLETED' | 'CANCELED';
+
+function getAllowedTransitions(status: string): TransitionStatus[] {
+  const transitions: TransitionStatus[] = [];
+
+  if (status === 'FEE_PAID') {
+    transitions.push('SOURCING');
+  }
+
+  if (status === 'PROPOSAL_PUBLISHED') {
+    transitions.push('COMPLETED');
+  }
+
+  if (status !== 'COMPLETED' && status !== 'CANCELED') {
+    transitions.push('CANCELED');
+  }
+
+  return transitions;
+}
+
+function getActionLabel(status: TransitionStatus): string {
+  if (status === 'SOURCING') return 'Start sourcing';
+  if (status === 'COMPLETED') return 'Mark completed';
+  return 'Cancel request';
+}
+
+function getTransitionReasonPlaceholder(status: TransitionStatus): string {
+  if (status === 'SOURCING') return 'Why is this request moving into sourcing?';
+  if (status === 'COMPLETED') return 'Why is this request now completed?';
+  return 'Why is this request being canceled?';
+}
 
 export function OperatorRequestDetailPage() {
   const params = useParams<{ requestId: string }>();
   const requestId = Number(params.requestId);
   const [payload, setPayload] = useState<RequestDetailPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [pendingTransition, setPendingTransition] = useState<TransitionStatus | null>(null);
+  const [transitionReason, setTransitionReason] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const reloadDetail = useCallback(() => {
+  const loadRequestDetail = async () => {
+    const response = await fetchRequestDetail(requestId);
+    setPayload(response);
+    setError(null);
+  };
+
+  useEffect(() => {
     if (!Number.isInteger(requestId) || requestId <= 0) {
       setError('Invalid request id.');
       return;
     }
 
-    return fetchRequestDetail(requestId)
-      .then((response) => {
-        setPayload(response);
-        setError(null);
-      })
-      .catch(() => {
-        setError('Could not load request detail.');
-      });
+    loadRequestDetail().catch(() => {
+      setError('Could not load request detail.');
+    });
   }, [requestId]);
 
-  useEffect(() => {
-    void reloadDetail();
-  }, [requestId]);
+  const availableTransitions = useMemo(
+    () => (payload ? getAllowedTransitions(payload.request.status) : []),
+    [payload]
+  );
 
-  const transitionActionMap: Record<string, Array<{ label: string; toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED' }>> = {
-    FEE_PAID: [
-      { label: 'Move to sourcing', toStatus: 'SOURCING' },
-      { label: 'Cancel request', toStatus: 'CANCELED' }
-    ],
-    SOURCING: [{ label: 'Cancel request', toStatus: 'CANCELED' }],
-    PROPOSAL_PUBLISHED: [
-      { label: 'Mark completed', toStatus: 'COMPLETED' },
-      { label: 'Cancel request', toStatus: 'CANCELED' }
-    ],
-    PROPOSAL_EXPIRED: [{ label: 'Cancel request', toStatus: 'CANCELED' }]
+  const startTransition = (toStatus: TransitionStatus) => {
+    setPendingTransition(toStatus);
+    setTransitionReason('');
+    setActionError(null);
+    setActionMessage(null);
   };
 
-  const availableActions = payload ? transitionActionMap[payload.request.status] ?? [] : [];
+  const cancelPendingTransition = () => {
+    setPendingTransition(null);
+    setTransitionReason('');
+  };
 
-  const onTransition = async (toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED') => {
-    if (!payload) return;
+  const applyOptimisticTransition = (current: RequestDetailPayload, toStatus: TransitionStatus, reason?: string) => {
+    const nowIso = new Date().toISOString();
 
+    return {
+      ...current,
+      request: {
+        ...current.request,
+        status: toStatus,
+        updatedAt: nowIso
+      },
+      proposals:
+        toStatus === 'COMPLETED' || toStatus === 'CANCELED'
+          ? current.proposals.map((proposal, index) =>
+              index === 0 && proposal.actedAt === null ? { ...proposal, actedAt: nowIso } : proposal
+            )
+          : current.proposals,
+      statusTimeline: [
+        {
+          id: -Date.now(),
+          fromStatus: current.request.status,
+          toStatus,
+          reason: reason ?? null,
+          metadata: { optimistic: true },
+          occurredAt: nowIso
+        },
+        ...current.statusTimeline
+      ]
+    };
+  };
+
+  const handleTransitionConfirm = async () => {
+    if (!pendingTransition) {
+      return;
+    }
+
+    if (!payload) {
+      return;
+    }
+
+    const normalizedReason = transitionReason.trim();
+    const confirmationMessage =
+      normalizedReason.length > 0
+        ? `Confirm transition to ${pendingTransition} with this reason?`
+        : `Confirm transition to ${pendingTransition}?`;
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
     setIsTransitioning(true);
+
     try {
-      await transitionRequestStatus(payload.request.id, { toStatus });
-      await reloadDetail();
+      setPayload(applyOptimisticTransition(payload, pendingTransition, normalizedReason || undefined));
+      setActionMessage('Applying transition and refreshing timeline...');
+      await transitionRequestStatus(payload.request.id, {
+        toStatus: pendingTransition,
+        ...(normalizedReason ? { reason: normalizedReason } : {})
+      });
+      await loadRequestDetail();
+      setActionMessage(`Request moved to ${pendingTransition}.`);
+      setPendingTransition(null);
+      setTransitionReason('');
     } catch {
-      setError('Could not transition request status.');
+      setActionError('Could not apply status transition.');
+      await loadRequestDetail().catch(() => undefined);
     } finally {
       setIsTransitioning(false);
     }
@@ -102,6 +193,56 @@ export function OperatorRequestDetailPage() {
           </article>
 
           <article className="card">
+            <h3>Transition Actions</h3>
+            <p>Allowed actions depend on current request status.</p>
+            {availableTransitions.length > 0 ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {availableTransitions.map((transitionStatus) => (
+                  <button
+                    key={transitionStatus}
+                    type="button"
+                    onClick={() => startTransition(transitionStatus)}
+                    disabled={isTransitioning}
+                  >
+                    {getActionLabel(transitionStatus)}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p>No transition actions available.</p>
+            )}
+            {pendingTransition ? (
+              <div style={{ marginTop: 12 }}>
+                <p>
+                  <strong>Confirm action:</strong> {getActionLabel(pendingTransition)}
+                </p>
+                <label htmlFor="transition-reason" style={{ display: 'block', marginTop: 8 }}>
+                  Reason (optional)
+                </label>
+                <textarea
+                  id="transition-reason"
+                  value={transitionReason}
+                  onChange={(event) => setTransitionReason(event.target.value)}
+                  placeholder={getTransitionReasonPlaceholder(pendingTransition)}
+                  disabled={isTransitioning}
+                  rows={3}
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => handleTransitionConfirm()} disabled={isTransitioning}>
+                    Confirm transition
+                  </button>
+                  <button type="button" onClick={cancelPendingTransition} disabled={isTransitioning}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {actionMessage ? <p>{actionMessage}</p> : null}
+            {actionError ? <p className="error">{actionError}</p> : null}
+          </article>
+
+          <article className="card">
             <h3>Status Timeline</h3>
             <ul>
               {payload.statusTimeline.map((event) => (
@@ -113,26 +254,6 @@ export function OperatorRequestDetailPage() {
               ))}
               {payload.statusTimeline.length === 0 ? <li>No status events logged yet.</li> : null}
             </ul>
-          </article>
-
-          <article className="card">
-            <h3>Transition Actions</h3>
-            {availableActions.length === 0 ? (
-              <p>No manual transition actions available for the current state.</p>
-            ) : (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {availableActions.map((action) => (
-                  <button
-                    key={action.toStatus}
-                    type="button"
-                    onClick={() => void onTransition(action.toStatus)}
-                    disabled={isTransitioning}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            )}
           </article>
 
           <article className="card">

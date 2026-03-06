@@ -190,9 +190,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## AUTH_ADMIN_ESSENTIALS
 - id: ACQ-AUTH-001
   priority: P0
-  status: TODO
+  status: IN_PROGRESS
   DoD: Add secure session authentication foundation (HTTP-only cookie sessions, user roles `CUSTOMER|OPERATOR|ADMIN`, protected route middleware).
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/server.ts`, `docs/SECURITY.md`
+- id: ACQ-AUTH-001A
+  priority: P0
+  status: TODO
+  DoD: Add backend session primitives (session table/model, secure cookie issuance/revocation, and API middleware role extraction for `CUSTOMER|OPERATOR|ADMIN`).
+  Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/routes`, `apps/api/tests`
+- id: ACQ-AUTH-001B
+  priority: P0
+  status: TODO
+  DoD: Add web route guards + auth bootstrap shell so operator/customer pages require active session before data fetch.
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
 - id: ACQ-AUTH-002
   priority: P1
   status: TODO
@@ -235,7 +245,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorQueuePage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-queue-page.test.tsx`
 - id: ACQ-ADMIN-002
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Deliver admin request detail workspace wave (`ACQ-ADMIN-002A..C`) with timeline/payment/proposal context and guarded transition actions.
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`, `docs/STATE_MACHINE.md`
 - id: ACQ-ADMIN-002A
@@ -250,9 +260,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-002C
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Add operator transition confirmation UX with reason capture and optimistic refresh of timeline/proposal sections.
-  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-003
   priority: P1
   status: TODO

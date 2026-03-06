@@ -175,5 +175,5 @@ export async function transitionRequestStatus(
     throw new Error(errorPayload.error ?? 'Failed to transition request status');
   }
 
-  return response.json() as Promise<{ id: number; status: string; transitionedAt: string }>;
+  return response.json() as Promise<{ id: number; status: string; updatedAt: string }>;
 }
