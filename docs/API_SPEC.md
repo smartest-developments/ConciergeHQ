@@ -230,8 +230,8 @@ Example response:
 Responses:
 - `200` transition accepted
 - `400` with `{ "error": "VALIDATION_ERROR" }` when payload is invalid
-- `401` with `{ "error": "AUTH_REQUIRED" }` when neither operator session role nor temporary role header is present
-- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when session/header role is not operator/admin
+- `401` with `{ "error": "AUTH_REQUIRED" }` when operator/admin session is missing or invalid
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when authenticated session role is not operator/admin
 - `404` with `{ "error": "REQUEST_NOT_FOUND" }`
 - `409` with `{ "error": "INVALID_STATUS_TRANSITION" }` when transition is disallowed
 
@@ -267,7 +267,7 @@ Example response:
 
 ## POST /api/requests/:id/proposals
 Operator publishes a proposal and starts the 2-hour action window.
-Accepts operator role from `acq_session` cookie identity first; temporary fallback header `x-operator-role: OPERATOR|ADMIN` remains supported until login APIs are live.
+Requires operator/admin authorization from `acq_session` cookie session identity.
 
 Example request:
 ```json
@@ -295,8 +295,8 @@ Example response:
 ```
 
 Additional responses:
-- `401` with `{ "error": "AUTH_REQUIRED" }` when operator role header is missing.
-- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when operator role is invalid.
+- `401` with `{ "error": "AUTH_REQUIRED" }` when operator/admin session is missing or invalid.
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when authenticated session role is not operator/admin.
 
 ## 2026-03-06 Auth Contract Increment
 - Backend session primitives are now defined for upcoming auth APIs:
@@ -307,7 +307,7 @@ Additional responses:
   - `POST /api/requests` rejects customer session/email mismatch (`403 REQUEST_FORBIDDEN`)
   - `GET /api/requests` forces customer scope to session owner
   - `GET /api/requests/:id` enforces customer ownership
-  - `POST /api/requests/:id/status` and `POST /api/requests/:id/proposals` use session role precedence with temporary `x-operator-role` fallback (`ACQ-AUTH-001A2`)
+  - `POST /api/requests/:id/status` and `POST /api/requests/:id/proposals` enforce session-only operator/admin authorization (`ACQ-AUTH-001A3`)
 
 ## POST /api/auth/register
 Create a customer account with credential hash + session issuance.

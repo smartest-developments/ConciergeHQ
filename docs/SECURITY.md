@@ -5,7 +5,7 @@
 - Next increment should enforce session-bound user identity and remove raw email query filtering.
 - Planned session model: HTTP-only secure cookie + server-side session table with rotation.
 - Web UI now enforces a bootstrap session gate (`/auth/login`, with `/auth/session` compatibility redirect) and role-aware route guards (`CUSTOMER|OPERATOR|ADMIN`) before protected pages load data; this is a temporary frontend safety layer until backend cookie sessions (`ACQ-AUTH-001A`) are live.
-- Interim hardening in place: `POST /api/requests/:id/proposals` now rejects unauthenticated calls and requires `x-operator-role: OPERATOR|ADMIN` (`401 AUTH_REQUIRED` or `403 OPERATOR_FORBIDDEN`).
+- Operator-only mutation routes (`POST /api/requests/:id/status`, `POST /api/requests/:id/proposals`) now require `acq_session` cookie auth with persisted `OPERATOR|ADMIN` user role (`401 AUTH_REQUIRED` or `403 OPERATOR_FORBIDDEN`).
 
 ## Input validation and abuse controls
 - Fastify routes validate payloads with Zod.
@@ -40,7 +40,7 @@
   - SHA-256 token hashing for DB lookup
   - active-session resolver with revoked/expired filtering
 - Added role primitives in schema via `User.role` (`CUSTOMER|OPERATOR|ADMIN`) and `Session` persistence model.
-- Transitional note: proposal/status mutation routes still accept header role fallback until `ACQ-AUTH-001A2` wires full cookie-session enforcement.
+- `ACQ-AUTH-001A3` completed: proposal/status mutation routes no longer accept header role fallback and now enforce session-only operator/admin auth.
 
 ## 2026-03-06 Credential Auth Increment (ACQ-AUTH-002B)
 - Added `UserCredential` persistence (`passwordHash`, failed-attempt counter, lock window) to support email/password auth without storing plaintext secrets.

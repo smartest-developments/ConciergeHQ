@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchRequestDetail, transitionRequestStatus } from '../api';
+import { fetchRequestDetail, publishProposal, transitionRequestStatus } from '../api';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
 type TransitionStatus = 'SOURCING' | 'COMPLETED' | 'CANCELED';
@@ -45,6 +45,10 @@ export function OperatorRequestDetailPage() {
   const [pendingTransition, setPendingTransition] = useState<TransitionStatus | null>(null);
   const [transitionReason, setTransitionReason] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [merchantName, setMerchantName] = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
+  const [proposalSummary, setProposalSummary] = useState('');
+  const [isPublishingProposal, setIsPublishingProposal] = useState(false);
 
   const loadRequestDetail = async () => {
     const response = await fetchRequestDetail(requestId);
@@ -148,6 +152,44 @@ export function OperatorRequestDetailPage() {
       await loadRequestDetail().catch(() => undefined);
     } finally {
       setIsTransitioning(false);
+    }
+  };
+
+  const canPublishProposal = payload?.request.status === 'FEE_PAID' || payload?.request.status === 'SOURCING';
+
+  const handlePublishProposal = async () => {
+    if (!payload || !canPublishProposal || isPublishingProposal) {
+      return;
+    }
+
+    const normalizedMerchantName = merchantName.trim();
+    const normalizedExternalUrl = externalUrl.trim();
+    const normalizedSummary = proposalSummary.trim();
+
+    if (!normalizedMerchantName || !normalizedExternalUrl) {
+      setActionError('Merchant name and proposal URL are required.');
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+    setIsPublishingProposal(true);
+
+    try {
+      await publishProposal(payload.request.id, {
+        merchantName: normalizedMerchantName,
+        externalUrl: normalizedExternalUrl,
+        ...(normalizedSummary ? { summary: normalizedSummary } : {})
+      });
+      await loadRequestDetail();
+      setActionMessage('Proposal published and timeline refreshed.');
+      setMerchantName('');
+      setExternalUrl('');
+      setProposalSummary('');
+    } catch {
+      setActionError('Could not publish proposal.');
+    } finally {
+      setIsPublishingProposal(false);
     }
   };
 
@@ -258,6 +300,52 @@ export function OperatorRequestDetailPage() {
 
           <article className="card">
             <h3>Proposal History</h3>
+            <p>Publish a proposal when request is in fee-paid or sourcing state.</p>
+            {canPublishProposal ? (
+              <div style={{ marginBottom: 12 }}>
+                <label htmlFor="proposal-merchant" style={{ display: 'block', marginTop: 8 }}>
+                  Merchant name
+                </label>
+                <input
+                  id="proposal-merchant"
+                  value={merchantName}
+                  onChange={(event) => setMerchantName(event.target.value)}
+                  placeholder="Example merchant"
+                  disabled={isPublishingProposal}
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+                <label htmlFor="proposal-url" style={{ display: 'block', marginTop: 8 }}>
+                  Proposal URL
+                </label>
+                <input
+                  id="proposal-url"
+                  value={externalUrl}
+                  onChange={(event) => setExternalUrl(event.target.value)}
+                  placeholder="https://merchant.example/proposal"
+                  disabled={isPublishingProposal}
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+                <label htmlFor="proposal-summary" style={{ display: 'block', marginTop: 8 }}>
+                  Summary (optional)
+                </label>
+                <textarea
+                  id="proposal-summary"
+                  value={proposalSummary}
+                  onChange={(event) => setProposalSummary(event.target.value)}
+                  placeholder="Short operator summary"
+                  disabled={isPublishingProposal}
+                  rows={3}
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <button type="button" onClick={handlePublishProposal} disabled={isPublishingProposal}>
+                    {isPublishingProposal ? 'Publishing...' : 'Publish proposal'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p>Proposal publishing is available only for fee-paid or sourcing requests.</p>
+            )}
             <ul>
               {payload.proposals.map((proposal) => (
                 <li key={proposal.id}>

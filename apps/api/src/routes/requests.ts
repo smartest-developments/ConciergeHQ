@@ -6,7 +6,7 @@ import { calculateSourcingFeeChf } from '../domain/fee.js';
 import { createIpRateLimiter } from '../lib/rateLimit.js';
 import { getRateLimitConfig } from '../lib/runtimeConfig.js';
 import { getStripeClient, getWebBaseUrl } from '../lib/stripe.js';
-import { parseOperatorRoleHeader } from '../lib/operatorRole.js';
+import { parseOperatorSessionRole } from '../lib/operatorRole.js';
 import { resolveSessionIdentity } from '../lib/sessionAuth.js';
 
 const createRequestSchema = z.object({
@@ -336,7 +336,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
 
   app.post('/api/requests/:id/status', async (req, reply) => {
     const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
-    const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role'], sessionIdentity?.role ?? null);
+    const roleResult = parseOperatorSessionRole(sessionIdentity?.role ?? null);
     if (!roleResult.ok) {
       return reply.status(roleResult.statusCode).send({ error: roleResult.error });
     }
@@ -593,7 +593,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       }
 
       const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
-      const roleResult = parseOperatorRoleHeader(req.headers['x-operator-role'], sessionIdentity?.role ?? null);
+      const roleResult = parseOperatorSessionRole(sessionIdentity?.role ?? null);
       if (!roleResult.ok) {
         return reply.status(roleResult.statusCode).send({ error: roleResult.error });
       }

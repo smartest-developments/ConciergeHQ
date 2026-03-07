@@ -178,6 +178,35 @@ export async function transitionRequestStatus(
   return response.json() as Promise<{ id: number; status: string; updatedAt: string }>;
 }
 
+export async function publishProposal(
+  requestId: number,
+  payload: { merchantName: string; externalUrl: string; summary?: string }
+) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/proposals`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to publish proposal');
+  }
+
+  return response.json() as Promise<{
+    requestId: number;
+    status: string;
+    proposal: {
+      id: number;
+      merchantName: string;
+      externalUrl: string;
+      summary: string | null;
+      publishedAt: string;
+      expiresAt: string;
+    };
+  }>;
+}
+
 export async function requestPasswordReset(email: string) {
   const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
     method: 'POST',

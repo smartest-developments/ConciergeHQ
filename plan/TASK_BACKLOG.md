@@ -1,6 +1,6 @@
 # TASK_BACKLOG
 
-Last reviewed: **2026-03-06**
+Last reviewed: **2026-03-07**
 
 Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discovery and enforce `P0 <= 7` items.
 
@@ -200,9 +200,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/server.ts`, `docs/SECURITY.md`
 - id: ACQ-AUTH-001A
   priority: P0
-  status: IN_PROGRESS
+  status: DONE
   DoD: Add backend session primitives (session table/model, secure cookie issuance/revocation, and API middleware role extraction for `CUSTOMER|OPERATOR|ADMIN`).
-  Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/routes`, `apps/api/tests`
+  Evidence: `apps/api/prisma/schema.prisma`, `apps/api/src/routes/requests.ts`, `apps/api/src/lib/operatorRole.ts`, `apps/api/tests/requests-list.test.ts`, `apps/api/tests/operator-role.test.ts`
 - id: ACQ-AUTH-001B
   priority: P0
   status: DONE
@@ -220,7 +220,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/auth-routes.test.ts`, `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-AUTH-004
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Add web auth UX (login/register/forgot/reset pages) and route guards for authenticated-only views.
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`
 - id: ACQ-AUTH-005
@@ -270,7 +270,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-003
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Add admin-side proposal composer/publisher flow with role guard, preview, and expiry visibility.
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`
 - id: ACQ-ADMIN-004
@@ -390,9 +390,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## AUTO_SPLIT_2026-03-06_ACQ-AUTH-001A
 - id: ACQ-AUTH-001A
   priority: P0
-  status: IN_PROGRESS
+  status: DONE
   DoD: Backend session primitives delivered in incremental slices to keep each run 1-3h and avoid monolithic auth rollout risk.
-  Evidence: `apps/api/src/lib/sessionAuth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/tests/session-auth.test.ts`, `apps/api/tests/operator-role.test.ts`
+  Evidence: `apps/api/src/lib/sessionAuth.ts`, `apps/api/prisma/schema.prisma`, `apps/api/src/lib/operatorRole.ts`, `apps/api/src/routes/requests.ts`, `apps/api/tests/session-auth.test.ts`, `apps/api/tests/operator-role.test.ts`, `apps/api/tests/requests-list.test.ts`
 - id: ACQ-AUTH-001A1
   priority: P0
   status: DONE
@@ -401,13 +401,13 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 - id: ACQ-AUTH-001A2
   priority: P0
   status: DONE
-  DoD: Wire request list/detail/create and operator status/proposal mutation routes to cookie-session identity and role extraction while preserving temporary operator-header fallback compatibility.
+  DoD: Wire request list/detail/create and operator status/proposal mutation routes to cookie-session identity and role extraction.
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
 - id: ACQ-AUTH-001A3
   priority: P0
-  status: TODO
-  DoD: Remove `x-operator-role` fallback once auth login APIs are live and enforce session-only operator/admin authorization contracts.
-  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
+  status: DONE
+  DoD: Enforce session-only operator/admin authorization contracts for request status/proposal mutation routes and reject header-only role spoofing.
+  Evidence: `apps/api/src/lib/operatorRole.ts`, `apps/api/src/routes/requests.ts`, `apps/api/tests/operator-role.test.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 
 ## AUTO_SPLIT_2026-03-06_ACQ-AUTH-004
 - id: ACQ-AUTH-004
@@ -427,9 +427,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/components/AppShell.tsx`, `apps/web/tests/register-page.test.tsx`, `apps/web/tests/app-shell.test.tsx`
 - id: ACQ-AUTH-004C
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
-  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+  Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`
 
 ## RUN_UPDATE_2026-03-06T16:23:58+0100
 - id: ACQ-AUTH-004B
@@ -439,9 +439,26 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages/RegisterPage.tsx`, `apps/web/src/pages/SessionBootstrapPage.tsx`, `apps/web/tests/register-page.test.tsx`, `apps/web/tests/session-bootstrap-page.test.tsx`
 - id: ACQ-AUTH-004C
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add forgot/reset password pages (`/auth/forgot`, `/auth/reset`) with token/error states and test coverage.
   Evidence: `apps/web/src/router.tsx`, `apps/web/src/pages`, `apps/web/tests`
+
+## AUTO_SPLIT_2026-03-07_ACQ-ADMIN-003
+- id: ACQ-ADMIN-003
+  priority: P1
+  status: IN_PROGRESS
+  DoD: Deliver admin proposal publishing incrementally with one UI/API-integrated slice per run and explicit expiry visibility.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-ADMIN-003A
+  priority: P1
+  status: DONE
+  DoD: Add operator request-detail proposal composer UI bound to `POST /api/requests/:id/proposals` with required merchant/url validation and refresh-on-success behavior.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-ADMIN-003B
+  priority: P1
+  status: TODO
+  DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 
 ## RUN_UPDATE_2026-03-06T16:27:30+0100
 - id: ACQ-AUTH-004C
@@ -478,3 +495,27 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   DoD: Add API integration tests for checkout/payment/proposal routes, including 429 headers and unhappy-path validations.
   Evidence: `apps/api/tests/requests-list.test.ts`, `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
   Note: completed by stabilizing rate-limit guard execution and validating checkout/confirm/proposal unhappy-path contracts.
+
+## RUN_UPDATE_2026-03-07T00:52:00+0100
+- id: ACQ-AUTH-001A3
+  priority: P0
+  status: DONE
+  DoD: Enforce session-only operator/admin authorization contracts for request status and proposal mutation APIs.
+  Evidence: `apps/api/src/lib/operatorRole.ts`, `apps/api/src/routes/requests.ts`, `apps/api/tests/operator-role.test.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
+- id: ACQ-AUTO-021
+  priority: P1
+  status: TODO
+  DoD: Add operator/admin session coverage for proposal publish unhappy-paths (`401` no session, `403 CUSTOMER` session) so auth regression is locked alongside status-route checks.
+  Evidence: `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
+
+## RUN_UPDATE_2026-03-07T01:37:14+0100
+- id: ACQ-ADMIN-003A
+  priority: P1
+  status: DONE
+  DoD: Add operator request-detail proposal composer UI bound to `POST /api/requests/:id/proposals` with client-side required-field validation and refresh-on-success behavior.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-ADMIN-003B
+  priority: P1
+  status: TODO
+  DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`

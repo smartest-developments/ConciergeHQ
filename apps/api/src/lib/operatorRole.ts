@@ -23,10 +23,7 @@ function parseCandidateRole(candidate: unknown): OperatorRoleParseResult | null 
   return { ok: true, role: parsedRole.data };
 }
 
-export function parseOperatorRoleHeader(
-  rawRoleHeader: unknown,
-  sessionRole?: SessionRole | null
-): OperatorRoleParseResult {
+export function parseOperatorSessionRole(sessionRole?: SessionRole | null): OperatorRoleParseResult {
   const sessionRoleResult = parseCandidateRole(sessionRole);
   if (sessionRoleResult) {
     return sessionRoleResult;
@@ -34,11 +31,6 @@ export function parseOperatorRoleHeader(
 
   if (typeof sessionRole === 'string' && sessionRole.trim().length > 0) {
     return { ok: false, statusCode: 403, error: 'OPERATOR_FORBIDDEN' };
-  }
-
-  const headerRoleResult = parseCandidateRole(rawRoleHeader);
-  if (headerRoleResult) {
-    return headerRoleResult;
   }
 
   return { ok: false, statusCode: 401, error: 'AUTH_REQUIRED' };

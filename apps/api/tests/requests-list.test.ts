@@ -399,6 +399,16 @@ describe('GET /api/requests list filters', () => {
 
   it('transitions request to sourcing when current status is fee paid', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 400,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 5,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue({
       id: 55,
       status: RequestStatus.FEE_PAID
@@ -414,7 +424,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
-      headers: { 'x-operator-role': 'OPERATOR' },
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
       payload: { toStatus: 'SOURCING' }
     });
 
@@ -436,6 +446,16 @@ describe('GET /api/requests list filters', () => {
 
   it('transitions request to completed when proposal is published', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 401,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 5,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue({
       id: 77,
       status: RequestStatus.PROPOSAL_PUBLISHED
@@ -451,7 +471,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/77/status',
-      headers: { 'x-operator-role': 'OPERATOR' },
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
       payload: { toStatus: 'COMPLETED' }
     });
 
@@ -473,6 +493,16 @@ describe('GET /api/requests list filters', () => {
 
   it('transitions request to canceled from sourcing', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 402,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 5,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue({
       id: 91,
       status: RequestStatus.SOURCING
@@ -488,7 +518,7 @@ describe('GET /api/requests list filters', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/91/status',
-      headers: { 'x-operator-role': 'OPERATOR' },
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
       payload: { toStatus: 'CANCELED', reason: 'Customer requested cancellation' }
     });
 
@@ -511,6 +541,16 @@ describe('GET /api/requests list filters', () => {
 
   it('rejects invalid status transition payload and transitions', async () => {
     const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 403,
+      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 5,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
     prisma.sourcingRequest.findUnique.mockResolvedValue({
       id: 55,
       status: RequestStatus.FEE_PENDING
@@ -520,7 +560,7 @@ describe('GET /api/requests list filters', () => {
     const invalidPayload = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
-      headers: { 'x-operator-role': 'OPERATOR' },
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
       payload: { toStatus: 'FEE_PAID' }
     });
     expect(invalidPayload.statusCode).toBe(400);
@@ -528,7 +568,7 @@ describe('GET /api/requests list filters', () => {
     const invalidTransition = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
-      headers: { 'x-operator-role': 'OPERATOR' },
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
       payload: { toStatus: 'COMPLETED' }
     });
     expect(invalidTransition.statusCode).toBe(409);
@@ -566,13 +606,14 @@ describe('GET /api/requests list filters', () => {
     await app.close();
   });
 
-  it('rejects status transition when operator identity is missing', async () => {
+  it('rejects status transition when no operator/admin session is present, even with role header', async () => {
     const prisma = makePrismaMock();
     const app = createServer(prisma as never);
 
     const response = await app.inject({
       method: 'POST',
       url: '/api/requests/55/status',
+      headers: { 'x-operator-role': 'OPERATOR' },
       payload: { toStatus: 'SOURCING' }
     });
 
