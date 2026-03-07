@@ -258,4 +258,82 @@ describe('OperatorRequestDetailPage', () => {
     });
     expect(screen.getByText('Proposal published and timeline refreshed.')).toBeTruthy();
   });
+
+  it('shows proposal preview copy and expiry countdown for published proposals', async () => {
+    mockedFetchRequestDetail.mockResolvedValue({
+      request: {
+        id: 55,
+        userEmail: 'detail@example.com',
+        budgetChf: 1800,
+        sourcingFeeChf: 180,
+        specs: 'Need a low-mileage hatchback with service history.',
+        category: 'ELECTRONICS',
+        country: 'CH',
+        condition: 'USED',
+        urgency: 'FAST',
+        status: 'SOURCING',
+        feePaidAt: '2026-03-06T08:00:00.000Z',
+        createdAt: '2026-03-05T08:00:00.000Z',
+        updatedAt: '2026-03-06T08:05:00.000Z'
+      },
+      proposals: [
+        {
+          id: 10,
+          merchantName: 'Prime Mobility',
+          externalUrl: 'https://merchant.example/p/10',
+          summary: 'Fresh sourcing result',
+          publishedAt: '2026-03-06T08:15:00.000Z',
+          expiresAt: '2099-03-06T10:15:00.000Z',
+          actedAt: null
+        }
+      ],
+      statusTimeline: []
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/publishing now will set request status to/i)).toBeTruthy();
+    });
+    expect(screen.getByText(/expires in/i)).toBeTruthy();
+  });
+
+  it('shows deterministic not-ready error state when proposal publish conflicts', async () => {
+    mockedFetchRequestDetail.mockResolvedValue({
+      request: {
+        id: 55,
+        userEmail: 'detail@example.com',
+        budgetChf: 1800,
+        sourcingFeeChf: 180,
+        specs: 'Need a low-mileage hatchback with service history.',
+        category: 'ELECTRONICS',
+        country: 'CH',
+        condition: 'USED',
+        urgency: 'FAST',
+        status: 'SOURCING',
+        feePaidAt: '2026-03-06T08:00:00.000Z',
+        createdAt: '2026-03-05T08:00:00.000Z',
+        updatedAt: '2026-03-06T08:05:00.000Z'
+      },
+      proposals: [],
+      statusTimeline: []
+    });
+    mockedPublishProposal.mockRejectedValue(new Error('REQUEST_NOT_READY_FOR_PROPOSAL'));
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Publish proposal' })).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Merchant name'), { target: { value: 'Prime Mobility' } });
+    fireEvent.change(screen.getByLabelText('Proposal URL'), {
+      target: { value: 'https://merchant.example/p/10' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish proposal' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/no longer in a proposal-ready state/i)).toBeTruthy();
+    });
+  });
 });

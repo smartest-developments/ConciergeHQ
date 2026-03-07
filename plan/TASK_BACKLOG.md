@@ -446,7 +446,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## AUTO_SPLIT_2026-03-07_ACQ-ADMIN-003
 - id: ACQ-ADMIN-003
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Deliver admin proposal publishing incrementally with one UI/API-integrated slice per run and explicit expiry visibility.
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-003A
@@ -456,7 +456,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-003B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 
@@ -519,3 +519,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+
+## RUN_UPDATE_2026-03-07T03:00:00+0100
+- id: ACQ-ADMIN-003B
+  priority: P1
+  status: DONE
+  DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-AUTO-021
+  priority: P1
+  status: TODO
+  DoD: Add operator/admin session coverage for proposal publish unhappy-paths (`401` no session, `403 CUSTOMER` session) so auth regression is locked alongside status-route checks.
+  Evidence: `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`

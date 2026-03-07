@@ -35,6 +35,31 @@ function getTransitionReasonPlaceholder(status: TransitionStatus): string {
   return 'Why is this request being canceled?';
 }
 
+function getProposalCountdownLabel(expiresAtIso: string, nowMs: number): string {
+  const expiresAtMs = Date.parse(expiresAtIso);
+  if (Number.isNaN(expiresAtMs)) {
+    return 'Expiry unavailable';
+  }
+
+  const diffMs = expiresAtMs - nowMs;
+  const diffMinutes = Math.floor(Math.abs(diffMs) / 60000);
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+
+  if (diffMs <= 0) {
+    if (hours > 0) {
+      return `Expired ${hours}h ${String(minutes).padStart(2, '0')}m ago`;
+    }
+    return `Expired ${minutes}m ago`;
+  }
+
+  if (hours > 0) {
+    return `Expires in ${hours}h ${String(minutes).padStart(2, '0')}m`;
+  }
+
+  return `Expires in ${Math.max(diffMinutes, 0)}m`;
+}
+
 export function OperatorRequestDetailPage() {
   const params = useParams<{ requestId: string }>();
   const requestId = Number(params.requestId);
@@ -49,6 +74,7 @@ export function OperatorRequestDetailPage() {
   const [externalUrl, setExternalUrl] = useState('');
   const [proposalSummary, setProposalSummary] = useState('');
   const [isPublishingProposal, setIsPublishingProposal] = useState(false);
+  const [proposalCountdownNow, setProposalCountdownNow] = useState(() => Date.now());
 
   const loadRequestDetail = async () => {
     const response = await fetchRequestDetail(requestId);
@@ -66,6 +92,14 @@ export function OperatorRequestDetailPage() {
       setError('Could not load request detail.');
     });
   }, [requestId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setProposalCountdownNow(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const availableTransitions = useMemo(
     () => (payload ? getAllowedTransitions(payload.request.status) : []),
@@ -156,6 +190,7 @@ export function OperatorRequestDetailPage() {
   };
 
   const canPublishProposal = payload?.request.status === 'FEE_PAID' || payload?.request.status === 'SOURCING';
+  const latestProposal = payload?.proposals[0] ?? null;
 
   const handlePublishProposal = async () => {
     if (!payload || !canPublishProposal || isPublishingProposal) {
@@ -186,8 +221,14 @@ export function OperatorRequestDetailPage() {
       setMerchantName('');
       setExternalUrl('');
       setProposalSummary('');
-    } catch {
-      setActionError('Could not publish proposal.');
+    } catch (caughtError) {
+      if (caughtError instanceof Error && caughtError.message === 'REQUEST_NOT_READY_FOR_PROPOSAL') {
+        setActionError('Proposal cannot be published because this request is no longer fee-paid/sourcing.');
+      } else {
+        setActionError('Could not publish proposal.');
+      }
+      setActionMessage(null);
+      await loadRequestDetail().catch(() => undefined);
     } finally {
       setIsPublishingProposal(false);
     }
@@ -289,8 +330,7 @@ export function OperatorRequestDetailPage() {
             <ul>
               {payload.statusTimeline.map((event) => (
                 <li key={event.id}>
-                  {event.fromStatus ?? 'START'} {'->'} {event.toStatus} (
-                  {new Date(event.occurredAt).toLocaleString()})
+                  {event.fromStatus ?? 'START'} {'->'} {event.toStatus} ({new Date(event.occurredAt).toLocaleString()})
                   {event.reason ? ` - ${event.reason}` : ''}
                 </li>
               ))}
@@ -301,6 +341,25 @@ export function OperatorRequestDetailPage() {
           <article className="card">
             <h3>Proposal History</h3>
             <p>Publish a proposal when request is in fee-paid or sourcing state.</p>
+            {latestProposal ? (
+              <div style={{ marginBottom: 12 }}>
+                <p>
+                  <strong>Latest proposal:</strong> {latestProposal.merchantName} (
+                  <a href={latestProposal.externalUrl} target="_blank" rel="noreferrer">
+                    Open
+                  </a>
+                  )
+                </p>
+                <p>
+                  <strong>Published:</strong> {new Date(latestProposal.publishedAt).toLocaleString()} |{' '}
+                  <strong>Expires:</strong> {new Date(latestProposal.expiresAt).toLocaleString()}
+                </p>
+                <p>
+                  <strong>{getProposalCountdownLabel(latestProposal.expiresAt, proposalCountdownNow)}</strong>
+                </p>
+                {latestProposal.summary ? <p>{latestProposal.summary}</p> : null}
+              </div>
+            ) : null}
             {canPublishProposal ? (
               <div style={{ marginBottom: 12 }}>
                 <label htmlFor="proposal-merchant" style={{ display: 'block', marginTop: 8 }}>
@@ -344,7 +403,10 @@ export function OperatorRequestDetailPage() {
                 </div>
               </div>
             ) : (
-              <p>Proposal publishing is available only for fee-paid or sourcing requests.</p>
+              <p>
+                Proposal publishing is unavailable while request is in <strong>{payload.request.status}</strong>. Move
+                the request to fee-paid or sourcing first.
+              </p>
             )}
             <ul>
               {payload.proposals.map((proposal) => (
