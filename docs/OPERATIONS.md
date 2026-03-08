@@ -33,17 +33,61 @@ Last updated: **2026-03-08**
   - Load dashboard and confirm browser logs include `[telemetry:web-vitals]` entries.
   - Confirm no sensitive fields are present in API or web telemetry payloads.
 
-## Incident Response Baseline (ACQ-REL-005 precursor)
+## Incident Response Runbook (ACQ-REL-005)
 
-Severity matrix preview:
-- `SEV-1`: complete outage or data-integrity risk; response start <= 15m.
-- `SEV-2`: partial outage or major degraded flow; response start <= 30m.
-- `SEV-3`: localized degradation; response start <= 4h.
+### Severity Matrix + Response SLAs
+| Severity | Trigger examples | Initial response SLA | Update cadence |
+| --- | --- | --- | --- |
+| `SEV-1` | Full API outage, data-integrity risk, auth/session compromise, payment confirmation failure spike across all users | <= 15 minutes | Every 15 minutes |
+| `SEV-2` | Partial outage (for one critical flow), persistent elevated 5xx/latency above alert threshold, proposal publish blocked for operators | <= 30 minutes | Every 30 minutes |
+| `SEV-3` | Localized degradation, non-critical feature regression with workaround available | <= 4 hours | Every 2 hours |
 
-Escalation:
-- Primary on-call: backend owner.
-- Secondary: web owner.
-- Product/legal escalation required for incidents touching payment/legal copy/compliance.
+### Escalation Path
+1. Incident commander (`IC`): backend owner on call.
+2. Secondary responder: web owner on call.
+3. Product owner + legal stakeholder: required for `SEV-1` and any incident touching payment/compliance/legal copy.
+4. Escalate to infrastructure/vendor support when:
+   - payment provider errors persist > 30 minutes (`SEV-1`/`SEV-2`);
+   - database connectivity incidents persist > 20 minutes;
+   - deployment rollback fails once.
+
+### First 30 Minutes Checklist
+1. Create incident channel/ticket with UTC timestamp and severity.
+2. Assign `IC`, communications owner, and scribe.
+3. Freeze non-incident deploys until severity is downgraded.
+4. Confirm blast radius:
+   - affected endpoints/routes;
+   - affected user segments/roles;
+   - latest successful request/deploy timestamp.
+5. Start mitigation:
+   - rollback last deploy if regression is release-correlated;
+   - disable non-essential jobs/traffic paths if they amplify risk;
+   - apply temporary rate/feature guard if needed.
+
+### Communications Template
+- Initial update:
+  - `Severity`: `SEV-x`
+  - `Impact`: concise customer-visible effect
+  - `Start time (UTC)`:
+  - `Current mitigation`:
+  - `Next update ETA`:
+- Resolution update:
+  - `Resolved at (UTC)`:
+  - `Root cause summary`:
+  - `Permanent fix`:
+  - `Follow-up actions` (link backlog IDs):
+
+### Postmortem Template (required for `SEV-1`/`SEV-2`)
+- `Incident ID`:
+- `Severity`:
+- `Start / end (UTC)`:
+- `Customer impact`:
+- `Detection source` (alert, support, manual):
+- `Root cause`:
+- `What worked`:
+- `What failed`:
+- `Action items`:
+  - each item must include owner + due date + backlog ID.
 
 Post-incident minimum evidence:
 - Timeline with UTC timestamps.

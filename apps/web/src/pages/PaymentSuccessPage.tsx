@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { confirmPayment } from '../api';
+import { trackProductEvent } from '../telemetry';
 
 export function PaymentSuccessPage() {
   const navigate = useNavigate();
@@ -20,10 +21,12 @@ export function PaymentSuccessPage() {
 
     confirmPayment(requestId, sessionId)
       .then(() => {
+        trackProductEvent('checkout_success', { requestId });
         const email = localStorage.getItem('acq_user_email');
         navigate(`/dashboard${email ? `?email=${encodeURIComponent(email)}` : ''}`);
       })
       .catch((paymentError) => {
+        trackProductEvent('checkout_failure', { requestId: Number.isInteger(requestId) ? requestId : null });
         setError(paymentError instanceof Error ? paymentError.message : 'Unable to confirm payment');
         setLoading(false);
       });

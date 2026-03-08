@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRequest, fetchCategories } from '../api';
 import { readAuthSession } from '../auth';
+import { trackProductEvent } from '../telemetry';
 
 const countries = [
   'AT', 'BE', 'BG', 'CH', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR',
@@ -47,9 +48,17 @@ export function CreateRequestPage() {
         condition: formData.condition as 'NEW' | 'USED',
         urgency: formData.urgency as 'STANDARD' | 'FAST' | 'CRITICAL'
       });
-
+      trackProductEvent('request_create_success', {
+        requestId: created.id,
+        category: formData.category,
+        urgency: formData.urgency
+      });
       navigate(`/payment/${created.id}?fee=${created.sourcingFeeChf}`);
     } catch (requestError) {
+      trackProductEvent('request_create_failure', {
+        category: formData.category,
+        urgency: formData.urgency
+      });
       setError(requestError instanceof Error ? requestError.message : 'Request creation failed');
     } finally {
       setSubmitting(false);

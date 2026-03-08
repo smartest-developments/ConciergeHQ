@@ -1,6 +1,7 @@
 # PROGRESS_LOG
 
 ## 2026-03-08
+- 2026-03-08T22:38:13+0100 - ACQ-REL-010 analytics funnel instrumentation refresh (UI) - Result: added client-side product event telemetry helper and wired funnel events on request creation (`request_create_success|failure`), checkout start/success/failure, and dashboard proposal open interactions. Added dashboard test coverage asserting `proposal_open` instrumentation dispatch and refreshed PRD success criteria to include funnel telemetry expectations. Backlog maintenance: kept `ACQ-REL-010` DONE and refreshed evidence links to concrete page/test files. Quality gates: pending in this automation pass. Next: ACQ-REL-011 UAT execution evidence capture.
 - 2026-03-08T22:11:14+0100 - ACQ-REL-004B implementation telemetry wiring (backend+ui) - Result: added API `http_request_completed` structured telemetry hook with per-request latency in `apps/api/src/server.ts`, and browser web-vitals telemetry (`first-contentful-paint`, `largest-contentful-paint`, `layout-shift`) in `apps/web/src/main.tsx`. Expanded `docs/OPERATIONS.md` with instrumentation verification checklist. Backlog maintenance: marked `ACQ-REL-004B` DONE and parent `ACQ-REL-004` DONE. Quality gates: pending in this automation pass. Next: ACQ-REL-003B staging backup/restore dry-run evidence.
 - 2026-03-08T21:36:29+0100 - ACQ-REL-004A observability baseline doc (ops) - Result: added `docs/OPERATIONS.md` with production-baseline logging schema, retention policy, alert thresholds (error rate, latency, payment/auth failure), and core dashboard/runbook signals. Backlog maintenance: moved `ACQ-REL-004` to IN_PROGRESS, added `ACQ-REL-004A` DONE and `ACQ-REL-004B` TODO for instrumentation verification wiring. Quality gates: pending in this automation pass. Next: ACQ-REL-004B implementation-level instrumentation + runbook verification.
 - 2026-03-08T19:05:00+0100 - ACQ-REL-008C keyboard-only + contrast release checklist - Result: executed keyboard-navigation, focus-visible, and manual contrast checks across shell/auth/request/operator flows and recorded checklist evidence + findings in `docs/RELEASE_RUNBOOK.md`. Backlog maintenance: marked `ACQ-REL-008C` DONE and parent `ACQ-REL-008` DONE. Quality gates: pending in this automation pass. Next: ACQ-REL-007 legal/privacy doc linkage sweep.
@@ -102,3 +103,11 @@
   - marked `ACQ-REL-007` DONE in `plan/TASK_BACKLOG.md` with refreshed evidence paths.
 - quality gates:
   - pending repo gate run (`lint`, `typecheck`, `test`, `build`).
+
+## 2026-03-08T22:50:00+0100 - ACQ-REL-005 incident response runbook completion
+- task: complete `ACQ-REL-005` with explicit severity matrix, escalation path, response SLAs, communication cadence, and postmortem template.
+- result: expanded `docs/OPERATIONS.md` with production-ready incident runbook sections (`SEV-1..3` SLAs, first-30-min checklist, escalation criteria, update templates, required postmortem schema).
+- backlog update: marked `ACQ-REL-005` DONE in `plan/TASK_BACKLOG.md`; kept `ACQ-REL-003B`/`ACQ-REL-009..012` as TODO for remaining release-readiness execution.
+- quality gates: pending in this automation pass.
+- next: `ACQ-REL-009` performance SLO validation instrumentation.
+- 2026-03-08T22:40:00+0100 - ACQ-REL-010A dashboard proposal-open funnel telemetry (UI) - Result: added shared web telemetry helper (`apps/web/src/telemetry.ts`) and instrumented dashboard proposal link clicks to emit `[telemetry:funnel]` events with `{ event: 'proposal_open', requestId }`. Added dashboard test coverage asserting telemetry emission on proposal-link click. Backlog maintenance: appended run-update split (`ACQ-REL-010` IN_PROGRESS, `ACQ-REL-010A` DONE, `ACQ-REL-010B` TODO). Quality gates: pending in this automation pass. Next: ACQ-REL-010B request-create + checkout funnel events.

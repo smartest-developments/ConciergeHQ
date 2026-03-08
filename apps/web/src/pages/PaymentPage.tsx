@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { createCheckoutSession } from '../api';
+import { trackProductEvent } from '../telemetry';
 
 const PAYMENT_NOTICE_STORAGE_KEY = 'acq_payment_notice';
 
@@ -33,10 +34,12 @@ export function PaymentPage() {
     setLoading(true);
 
     try {
+      trackProductEvent('checkout_start', { requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null });
       const session = await createCheckoutSession(parsedRequestId);
       if (!session.checkoutUrl) {
         throw new Error('Payment provider returned no checkout URL');
       }
+      trackProductEvent('checkout_success', { requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null });
       window.location.assign(session.checkoutUrl);
     } catch (paymentError) {
       localStorage.setItem(
@@ -46,6 +49,7 @@ export function PaymentPage() {
           requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null
         })
       );
+      trackProductEvent('checkout_failure', { requestId: Number.isInteger(parsedRequestId) ? parsedRequestId : null });
       setError(paymentError instanceof Error ? paymentError.message : 'Unable to start payment');
     } finally {
       setLoading(false);

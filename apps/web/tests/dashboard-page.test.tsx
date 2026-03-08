@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from '../src/pages/DashboardPage';
@@ -88,5 +88,51 @@ describe('DashboardPage', () => {
     });
 
     expect(window.localStorage.getItem('acq_payment_notice')).toBeNull();
+  });
+
+  it('tracks proposal-open funnel event when proposal link is clicked', async () => {
+    const telemetrySpy = vi.spyOn(window.console, 'info').mockImplementation(() => undefined);
+
+    mockedFetchRequests.mockResolvedValue({
+      requests: [
+        {
+          id: 43,
+          status: 'PROPOSAL_PUBLISHED',
+          userEmail: 'buyer@example.com',
+          budgetChf: 1400,
+          sourcingFeeChf: 140,
+          category: 'ELECTRONICS',
+          country: 'CH',
+          condition: 'NEW',
+          urgency: 'STANDARD',
+          createdAt: '2026-03-07T08:00:00.000Z',
+          feePaidAt: '2026-03-07T08:10:00.000Z',
+          proposal: {
+            id: 1,
+            merchantName: 'Swiss Gear',
+            externalUrl: 'https://merchant.example/proposal',
+            summary: null,
+            publishedAt: '2026-03-07T10:00:00.000Z',
+            expiresAt: '2026-03-07T12:00:00.000Z'
+          }
+        }
+      ]
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    const proposalLink = await screen.findByRole('link', { name: 'Swiss Gear' });
+    fireEvent.click(proposalLink);
+
+    expect(telemetrySpy).toHaveBeenCalledWith('[telemetry:funnel]', {
+      event: 'proposal_open',
+      requestId: 43
+    });
+
+    telemetrySpy.mockRestore();
   });
 });

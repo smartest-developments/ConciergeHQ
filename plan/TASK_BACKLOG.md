@@ -347,7 +347,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src`, `apps/web/src`, `docs/OPERATIONS.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-005
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Define incident response runbook (severity matrix, escalation path, response SLAs, postmortem template).
   Evidence: `docs/OPERATIONS.md`
 - id: ACQ-REL-006
@@ -399,7 +399,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   priority: P1
   status: TODO
   DoD: Add product analytics/funnel instrumentation for request creation, checkout start/success/failure, proposal open.
-  Evidence: `apps/web/src`, `docs/PRD.md`
+  Evidence: `apps/web/src/telemetry.ts`, `apps/web/src/pages/CreateRequestPage.tsx`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/PaymentSuccessPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`, `docs/PRD.md`
 - id: ACQ-REL-011
   priority: P1
   status: TODO
@@ -581,7 +581,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-003B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add proposal preview + deterministic expiry countdown visibility with explicit conflict/error states for not-ready requests.
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 
@@ -593,7 +593,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-AUTO-021
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add operator/admin session coverage for proposal publish unhappy-paths (`401` no session, `403 CUSTOMER` session) so auth regression is locked alongside status-route checks.
   Evidence: `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
 
@@ -627,3 +627,20 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: API integration tests stay deterministic under real current dates by using non-expired session fixtures and order tolerant assertions where timeline and audit arrays may contain multiple valid entries.
   Evidence: apps/api/tests/auth-routes.test.ts, apps/api/tests/requests-list.test.ts
+
+## RUN_UPDATE_2026-03-08T22:40:00+0100
+- id: ACQ-REL-010
+  priority: P1
+  status: IN_PROGRESS
+  DoD: Add product analytics/funnel instrumentation for request creation, checkout start/success/failure, proposal open via incremental slices `ACQ-REL-010A..B`.
+  Evidence: `apps/web/src`, `docs/PRD.md`
+- id: ACQ-REL-010A
+  priority: P1
+  status: DONE
+  DoD: Instrument dashboard proposal link opens with deterministic funnel telemetry payloads for request-level analysis.
+  Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/telemetry.ts`, `apps/web/tests/dashboard-page.test.tsx`
+- id: ACQ-REL-010B
+  priority: P1
+  status: TODO
+  DoD: Instrument request creation and checkout start/success/failure funnel events with deterministic payload keys.
+  Evidence: `apps/web/src/pages/CreateRequestPage.tsx`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/tests`

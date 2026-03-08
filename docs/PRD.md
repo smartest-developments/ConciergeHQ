@@ -43,3 +43,7 @@ Blocked:
 - User can see request statuses in dashboard.
 - User can see published proposal merchant/link details and expiry.
 - API enforces category and country constraints.
+- Product funnel telemetry is emitted for request creation, checkout start/success/failure, and proposal open interactions.
+
+## Session note (2026-03-08)
+- Started release-readiness funnel instrumentation (`ACQ-REL-010`) with deterministic dashboard proposal-open telemetry payload (`event=proposal_open`, `requestId`).

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchRequests } from '../api';
 import { readAuthSession } from '../auth';
+import { trackFunnelEvent } from '../telemetry';
 
 const PAYMENT_NOTICE_STORAGE_KEY = 'acq_payment_notice';
 
@@ -126,7 +127,12 @@ export function DashboardPage() {
                 <td>
                   {record.proposal ? (
                     <div className="proposal-cell">
-                      <a href={record.proposal.externalUrl} target="_blank" rel="noreferrer">
+                      <a
+                        href={record.proposal.externalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => trackFunnelEvent('proposal_open', { requestId: record.id })}
+                      >
                         {record.proposal.merchantName}
                       </a>
                       <small>Expires: {new Date(record.proposal.expiresAt).toLocaleString()}</small>
