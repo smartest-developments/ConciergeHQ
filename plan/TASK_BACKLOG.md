@@ -332,9 +332,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-004
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Baseline observability in production (structured logs retention, API error-rate/latency alerts, payment failure alerting).
   Evidence: `docs/OPERATIONS.md`
+- id: ACQ-REL-004A
+  priority: P1
+  status: DONE
+  DoD: Define and document observability baseline (logging schema, retention windows, alert thresholds, and core dashboard signals).
+  Evidence: `docs/OPERATIONS.md`, `plan/PROGRESS_LOG.md`
+- id: ACQ-REL-004B
+  priority: P1
+  status: TODO
+  DoD: Wire implementation-level instrumentation and runbook verification for the documented observability baseline.
+  Evidence: `apps/api/src`, `apps/web/src`, `docs/OPERATIONS.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-005
   priority: P1
   status: TODO
