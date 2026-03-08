@@ -70,6 +70,33 @@ describe('OperatorRequestDetailPage', () => {
           metadata: { proposalId: 9 },
           occurredAt: '2026-03-06T08:05:00.000Z'
         }
+      ],
+      adminAuditTrail: [
+        {
+          id: 5,
+          actionType: 'ROLE_CHANGE',
+          fromStatus: 'SOURCING',
+          toStatus: 'SOURCING',
+          actorRole: 'ADMIN',
+          proposalId: null,
+          roleChange: {
+            fromRole: 'OPERATOR',
+            toRole: 'ADMIN',
+            targetUserId: 19
+          },
+          reason: 'Admin reassigned queue ownership',
+          occurredAt: '2026-03-06T08:06:00.000Z'
+        },
+        {
+          id: 4,
+          actionType: 'PROPOSAL_PUBLISHED',
+          fromStatus: 'SOURCING',
+          toStatus: 'PROPOSAL_PUBLISHED',
+          actorRole: 'OPERATOR',
+          proposalId: 9,
+          reason: 'Proposal published by operator',
+          occurredAt: '2026-03-06T08:05:00.000Z'
+        }
       ]
     });
 
@@ -80,13 +107,17 @@ describe('OperatorRequestDetailPage', () => {
     });
     expect(screen.getByText('Request #55')).toBeTruthy();
     expect(screen.getByText('detail@example.com')).toBeTruthy();
-    expect(screen.getByText(/SOURCING -> PROPOSAL_PUBLISHED/)).toBeTruthy();
+    expect(screen.getAllByText(/SOURCING -> PROPOSAL_PUBLISHED/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole('link', { name: 'Open' })[0]?.getAttribute('href')).toBe(
       'https://merchant.example/p/9'
     );
     expect(screen.getByRole('button', { name: 'Mark completed' })).toBeTruthy();
     expect(screen.getByText(/Latest proposal:/)).toBeTruthy();
     expect(screen.getByText(/Proposal publishing is unavailable while request is in/)).toBeTruthy();
+    expect(screen.getByText(/actor role: OPERATOR/i)).toBeTruthy();
+    expect(screen.getByText(/proposal #9/i)).toBeTruthy();
+    expect(screen.getByText(/Role changed/)).toBeTruthy();
+    expect(screen.getByText(/role: OPERATOR -> ADMIN \(user #19\)/i)).toBeTruthy();
     expect(screen.getByText(/Expired|Expires in/)).toBeTruthy();
   });
 

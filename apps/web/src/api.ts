@@ -157,6 +157,21 @@ export async function fetchRequestDetail(requestId: number) {
       metadata: Record<string, unknown> | null;
       occurredAt: string;
     }>;
+    adminAuditTrail?: Array<{
+      id: number;
+      actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE';
+      fromStatus: string | null;
+      toStatus: string;
+      actorRole: string | null;
+      proposalId: number | null;
+      roleChange?: {
+        fromRole: string;
+        toRole: string;
+        targetUserId: number | null;
+      } | null;
+      reason: string | null;
+      occurredAt: string;
+    }>;
   }>;
 }
 

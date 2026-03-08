@@ -62,6 +62,42 @@ const transitionRequestStatusSchema = z.object({
 });
 
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
+type AuditActionType = 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE';
+
+function resolveAuditActionType(
+  toStatus: RequestStatus,
+  metadata: unknown
+): AuditActionType | null {
+  const normalizedMetadata =
+    metadata && typeof metadata === 'object' ? (metadata as Record<string, unknown>) : null;
+  const hasProposalId = typeof normalizedMetadata?.proposalId === 'number';
+  const hasOperatorRole = typeof normalizedMetadata?.operatorRole === 'string';
+  const roleChangeMetadata =
+    normalizedMetadata?.roleChange && typeof normalizedMetadata.roleChange === 'object'
+      ? (normalizedMetadata.roleChange as Record<string, unknown>)
+      : null;
+  const hasRoleChange =
+    typeof roleChangeMetadata?.fromRole === 'string' && typeof roleChangeMetadata?.toRole === 'string';
+
+  if (hasRoleChange) {
+    return 'ROLE_CHANGE';
+  }
+
+  if (toStatus === RequestStatus.PROPOSAL_PUBLISHED || hasProposalId) {
+    return 'PROPOSAL_PUBLISHED';
+  }
+
+  if (
+    hasOperatorRole &&
+    (toStatus === RequestStatus.SOURCING ||
+      toStatus === RequestStatus.COMPLETED ||
+      toStatus === RequestStatus.CANCELED)
+  ) {
+    return 'STATUS_OVERRIDE';
+  }
+
+  return null;
+}
 
 export async function registerRequestRoutes(app: FastifyInstance): Promise<void> {
   const rateLimitConfig = getRateLimitConfig();
@@ -330,7 +366,50 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
         reason: event.reason,
         metadata: event.metadata,
         occurredAt: event.occurredAt
-      }))
+      })),
+      adminAuditTrail: request.statusEvents
+        .map((event) => {
+          const actionType = resolveAuditActionType(event.toStatus, event.metadata);
+          if (!actionType) {
+            return null;
+          }
+
+          const metadata =
+            event.metadata && typeof event.metadata === 'object'
+              ? (event.metadata as Record<string, unknown>)
+              : null;
+          const actorRole = typeof metadata?.operatorRole === 'string' ? metadata.operatorRole : null;
+          const proposalId = typeof metadata?.proposalId === 'number' ? metadata.proposalId : null;
+          const roleChangeMetadata =
+            metadata?.roleChange && typeof metadata.roleChange === 'object'
+              ? (metadata.roleChange as Record<string, unknown>)
+              : null;
+          const roleChange =
+            typeof roleChangeMetadata?.fromRole === 'string' &&
+            typeof roleChangeMetadata?.toRole === 'string'
+              ? {
+                  fromRole: roleChangeMetadata.fromRole,
+                  toRole: roleChangeMetadata.toRole,
+                  targetUserId:
+                    typeof roleChangeMetadata.targetUserId === 'number'
+                      ? roleChangeMetadata.targetUserId
+                      : null
+                }
+              : null;
+
+          return {
+            id: event.id,
+            actionType,
+            fromStatus: event.fromStatus,
+            toStatus: event.toStatus,
+            actorRole,
+            proposalId,
+            roleChange,
+            reason: event.reason,
+            occurredAt: event.occurredAt
+          };
+        })
+        .filter((event): event is NonNullable<typeof event> => event !== null)
     };
   });
 

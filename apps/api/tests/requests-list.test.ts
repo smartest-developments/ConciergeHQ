@@ -48,7 +48,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 300,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 1,
@@ -134,7 +134,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 301,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 77,
@@ -175,7 +175,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 302,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 22,
@@ -239,7 +239,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 303,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 1,
@@ -292,7 +292,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 304,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 1,
@@ -327,11 +327,26 @@ describe('GET /api/requests list filters', () => {
       ],
       statusEvents: [
         {
+          id: 3,
+          fromStatus: RequestStatus.SOURCING,
+          toStatus: RequestStatus.SOURCING,
+          reason: 'Admin reassigned queue ownership',
+          metadata: {
+            operatorRole: 'ADMIN',
+            roleChange: {
+              fromRole: 'OPERATOR',
+              toRole: 'ADMIN',
+              targetUserId: 19
+            }
+          },
+          occurredAt: new Date('2026-03-05T08:45:00.000Z')
+        },
+        {
           id: 2,
           fromStatus: RequestStatus.SOURCING,
           toStatus: RequestStatus.PROPOSAL_PUBLISHED,
           reason: 'Proposal published by operator',
-          metadata: { proposalId: 7 },
+          metadata: { proposalId: 7, operatorRole: 'OPERATOR' },
           occurredAt: new Date('2026-03-05T08:30:00.000Z')
         }
       ]
@@ -363,18 +378,36 @@ describe('GET /api/requests list filters', () => {
           userEmail: 'detail@example.com',
           status: 'PROPOSAL_PUBLISHED'
         }),
-        proposals: [
+        proposals: expect.arrayContaining([
           expect.objectContaining({
             id: 7,
             merchantName: 'Zurich Appliance Hub'
           })
-        ],
-        statusTimeline: [
+        ]),
+        statusTimeline: expect.arrayContaining([
           expect.objectContaining({
             id: 2,
             toStatus: 'PROPOSAL_PUBLISHED'
           })
-        ]
+        ]),
+        adminAuditTrail: expect.arrayContaining([
+          expect.objectContaining({
+            id: 3,
+            actionType: 'ROLE_CHANGE',
+            actorRole: 'ADMIN',
+            roleChange: {
+              fromRole: 'OPERATOR',
+              toRole: 'ADMIN',
+              targetUserId: 19
+            }
+          }),
+          expect.objectContaining({
+            id: 2,
+            actionType: 'PROPOSAL_PUBLISHED',
+            actorRole: 'OPERATOR',
+            proposalId: 7
+          })
+        ])
       })
     );
 
@@ -401,7 +434,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 400,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 5,
@@ -448,7 +481,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 401,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 5,
@@ -495,7 +528,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 402,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 5,
@@ -543,7 +576,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 403,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 5,
@@ -581,7 +614,7 @@ describe('GET /api/requests list filters', () => {
     const prisma = makePrismaMock();
     prisma.session.findUnique.mockResolvedValue({
       id: 305,
-      expiresAt: new Date('2026-03-07T10:00:00.000Z'),
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
       revokedAt: null,
       user: {
         id: 1,

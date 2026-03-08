@@ -150,7 +150,7 @@ describe('auth routes', () => {
     prisma.session.findUnique.mockResolvedValue({
       id: 412,
       revokedAt: null,
-      expiresAt: new Date('2026-03-08T00:00:00.000Z'),
+      expiresAt: new Date('2030-03-08T00:00:00.000Z'),
       user: {
         id: 9,
         email: 'Customer@Example.com ',

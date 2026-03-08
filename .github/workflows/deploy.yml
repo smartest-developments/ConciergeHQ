@@ -1,0 +1,97 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment target
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      release_tag:
+        description: Existing git tag to deploy (required for production)
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+
+  deploy_staging:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging
+        run: |
+          echo "Deploying staging build for commit $GITHUB_SHA"
+          echo "Replace this step with your staging deployment command"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Post-deploy web smoke tests (staging)
+        run: npm --workspace apps/web run test:smoke
+
+  create_release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+
+  deploy_production:
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag != '' && github.event.inputs.release_tag || github.ref }}
+      - name: Validate production release tag for manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -z "${{ github.event.inputs.release_tag }}" ]; then
+            echo "release_tag is required for production manual deploy"
+            exit 1
+          fi
+          git rev-parse "${{ github.event.inputs.release_tag }}" >/dev/null
+      - name: Deploy to production
+        run: |
+          echo "Deploying production release ${GITHUB_REF_NAME:-${{ github.event.inputs.release_tag }}}"
+          echo "Replace this step with your production deployment command"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Post-deploy web smoke tests (production gate)
+        run: npm --workspace apps/web run test:smoke

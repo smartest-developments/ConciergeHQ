@@ -1,6 +1,6 @@
 # TASK_BACKLOG
 
-Last reviewed: **2026-03-07**
+Last reviewed: **2026-03-08**
 
 Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discovery and enforce `P0 <= 7` items.
 
@@ -280,9 +280,29 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes`, `apps/web/src/pages`, `docs/SECURITY.md`
 - id: ACQ-ADMIN-005
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Expose and render admin audit trail for sensitive actions (proposal publish, role changes, status overrides).
   Evidence: `apps/api/src/routes`, `apps/web/src/pages`, `apps/api/prisma/schema.prisma`
+- id: ACQ-ADMIN-005A
+  priority: P1
+  status: DONE
+  DoD: Add request-detail audit trail payload + UI rendering for proposal publish and operator status overrides.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-ADMIN-005B
+  priority: P1
+  status: IN_PROGRESS
+  DoD: Extend admin audit trail scope to include role-change events with dedicated API/UI views (`ACQ-ADMIN-005B1..B2`).
+  Evidence: `apps/api/src/routes`, `apps/api/prisma/schema.prisma`, `apps/web/src/pages`
+- id: ACQ-ADMIN-005B1
+  priority: P1
+  status: DONE
+  DoD: Render role-change entries in request-detail admin audit trail when status-event metadata includes `roleChange` context.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-ADMIN-005B2
+  priority: P1
+  status: TODO
+  DoD: Persist role-change status events from admin role-management flows so audit trail coverage is complete without manual metadata seeding.
+  Evidence: `apps/api/src/routes`, `apps/api/prisma/schema.prisma`, `apps/api/tests`
 
 ## RELEASE_READINESS
 - id: ACQ-REL-001
@@ -292,9 +312,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/RELEASE_CHECKLIST.md`
 - id: ACQ-REL-002
   priority: P0
-  status: TODO
+  status: DONE
   DoD: Introduce staging/prod deployment workflow with protected production approval gate and tagged releases.
-  Evidence: `.github/workflows`, `docs/RELEASE_RUNBOOK.md`
+  Evidence: `.github/workflows/deploy.yml`, `docs/RELEASE_RUNBOOK.md`
 - id: ACQ-REL-003
   priority: P0
   status: TODO
@@ -531,3 +551,34 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add operator/admin session coverage for proposal publish unhappy-paths (`401` no session, `403 CUSTOMER` session) so auth regression is locked alongside status-route checks.
   Evidence: `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
+
+## AUTO_RUN_2026-03-08T09:56:50+0100
+- [ACQ-ADMIN-005B] status note: BLOCKED by dependency `ACQ-ADMIN-004` (role-assignment mutation APIs/UI not implemented), so role-change audit events cannot be produced yet.
+- Suggested split: `ACQ-ADMIN-004A` backend role-assignment mutation + audit event persistence, `ACQ-ADMIN-004B` admin role-management UI with safety checks.
+
+## AUTO_SPLIT_2026-03-08_ACQ-REL-002
+- id: ACQ-REL-002
+  priority: P0
+  status: DONE
+  DoD: Introduce staging/prod deployment workflow with protected production approval gate and tagged releases.
+  Evidence: `.github/workflows/deploy.yml`, `docs/RELEASE_RUNBOOK.md`
+- id: ACQ-REL-002A
+  priority: P0
+  status: DONE
+  Acceptance: Staging manual deploy exists and production deploy requires protected environment approval and tagged release semantics.
+  DoD: Add CI-verified `deploy` workflow with staging/production lanes, production environment gate, and tag-triggered release job.
+  Evidence: `.github/workflows/deploy.yml`, `docs/RELEASE_RUNBOOK.md`
+- id: ACQ-REL-002B
+  priority: P1
+  status: DONE
+  Acceptance: Post-deploy UI smoke check is automated and blocks production completion on dashboard/operator route regressions.
+  DoD: Add web smoke verification step to deployment workflow and document rollback trigger thresholds.
+  Evidence: `.github/workflows/deploy.yml`, `apps/web/tests`, `docs/RELEASE_RUNBOOK.md`
+
+
+## AUTO_DISCOVERED_2026-03-08
+- id: ACQ-AUTO-022
+  priority: P1
+  status: DONE
+  DoD: API integration tests stay deterministic under real current dates by using non-expired session fixtures and order tolerant assertions where timeline and audit arrays may contain multiple valid entries.
+  Evidence: apps/api/tests/auth-routes.test.ts, apps/api/tests/requests-list.test.ts

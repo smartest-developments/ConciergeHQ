@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
     "test": "vitest run",
+    "test:smoke": "vitest run tests/dashboard-page.test.tsx tests/operator-queue-page.test.tsx tests/operator-request-detail-page.test.tsx",
     "lint": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

@@ -60,6 +60,17 @@ function getProposalCountdownLabel(expiresAtIso: string, nowMs: number): string 
   return `Expires in ${Math.max(diffMinutes, 0)}m`;
 }
 
+function getAuditActionLabel(actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE'): string {
+  if (actionType === 'PROPOSAL_PUBLISHED') {
+    return 'Proposal published';
+  }
+  if (actionType === 'ROLE_CHANGE') {
+    return 'Role changed';
+  }
+
+  return 'Status override';
+}
+
 export function OperatorRequestDetailPage() {
   const params = useParams<{ requestId: string }>();
   const requestId = Number(params.requestId);
@@ -191,6 +202,7 @@ export function OperatorRequestDetailPage() {
 
   const canPublishProposal = payload?.request.status === 'FEE_PAID' || payload?.request.status === 'SOURCING';
   const latestProposal = payload?.proposals[0] ?? null;
+  const adminAuditTrail = payload?.adminAuditTrail ?? [];
 
   const handlePublishProposal = async () => {
     if (!payload || !canPublishProposal || isPublishingProposal) {
@@ -335,6 +347,28 @@ export function OperatorRequestDetailPage() {
                 </li>
               ))}
               {payload.statusTimeline.length === 0 ? <li>No status events logged yet.</li> : null}
+            </ul>
+          </article>
+
+          <article className="card">
+            <h3>Admin Audit Trail</h3>
+            <ul>
+              {adminAuditTrail.map((event) => (
+                <li key={event.id}>
+                  <strong>{getAuditActionLabel(event.actionType)}</strong> ({new Date(event.occurredAt).toLocaleString()})
+                  {' - '}
+                  {event.fromStatus ?? 'START'} {'->'} {event.toStatus}
+                  {event.actorRole ? ` - actor role: ${event.actorRole}` : ''}
+                  {event.proposalId ? ` - proposal #${event.proposalId}` : ''}
+                  {event.roleChange
+                    ? ` - role: ${event.roleChange.fromRole} -> ${event.roleChange.toRole}${
+                        event.roleChange.targetUserId ? ` (user #${event.roleChange.targetUserId})` : ''
+                      }`
+                    : ''}
+                  {event.reason ? ` - ${event.reason}` : ''}
+                </li>
+              ))}
+              {adminAuditTrail.length === 0 ? <li>No admin audit events logged yet.</li> : null}
             </ul>
           </article>
 
