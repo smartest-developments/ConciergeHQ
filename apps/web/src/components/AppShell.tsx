@@ -39,6 +39,24 @@ export function AppShell() {
       <main>
         <Outlet />
       </main>
+      <footer>
+        <nav aria-label="Legal">
+          <a href="#legal-privacy">Privacy Policy</a>
+          <a href="#legal-terms">Terms of Service</a>
+        </nav>
+        <section aria-label="Legal policy summary">
+          <h2 id="legal-privacy">Privacy Policy</h2>
+          <p>
+            We process account and sourcing-request data only to deliver the informational concierge service,
+            with GDPR export/deletion rights available to authenticated users.
+          </p>
+          <h2 id="legal-terms">Terms of Service</h2>
+          <p>
+            Acquisition Concierge is not the merchant of record. Platform fees cover sourcing research and are
+            non-refundable once work begins; final purchase contracts remain between customer and external seller.
+          </p>
+        </section>
+      </footer>
     </div>
   );
 }

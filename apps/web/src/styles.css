@@ -18,6 +18,23 @@ body {
   padding: 1.5rem;
 }
 
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0.75rem;
+  z-index: 1000;
+  background: #0b5e72;
+  color: #ffffff;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.skip-link:focus-visible {
+  left: 1rem;
+}
+
 header h1 {
   margin-bottom: 0.25rem;
 }
@@ -49,6 +66,15 @@ nav a {
 
 nav a.active {
   text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #0b5e72;
+  outline-offset: 2px;
 }
 
 .card {
