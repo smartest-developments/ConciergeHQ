@@ -25,6 +25,10 @@ export function SessionBootstrapPage() {
   const [error, setError] = useState<string | null>(null);
   const nextPath = normalizeNextPath(searchParams.get('next'));
 
+  const emailInputId = 'session-bootstrap-email';
+  const roleInputId = 'session-bootstrap-role';
+  const errorId = 'session-bootstrap-error';
+
   function onSignIn(event: FormEvent) {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
@@ -54,20 +58,32 @@ export function SessionBootstrapPage() {
         </p>
       ) : null}
 
-      <form className="card form-grid" onSubmit={onSignIn}>
-        <label>
+      <form className="card form-grid" onSubmit={onSignIn} noValidate>
+        <label htmlFor={emailInputId}>
           Email
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          <input
+            id={emailInputId}
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? errorId : undefined}
+          />
         </label>
-        <label>
+        <label htmlFor={roleInputId}>
           Role
-          <select value={role} onChange={(event) => setRole(event.target.value as SessionRole)}>
+          <select id={roleInputId} value={role} onChange={(event) => setRole(event.target.value as SessionRole)}>
             <option value="CUSTOMER">CUSTOMER</option>
             <option value="OPERATOR">OPERATOR</option>
             <option value="ADMIN">ADMIN</option>
           </select>
         </label>
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p id={errorId} className="error" role="status" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
         <button type="submit">Sign in</button>
         <button type="button" onClick={onSignOut}>
           Sign out

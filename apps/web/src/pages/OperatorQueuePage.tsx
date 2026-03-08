@@ -52,6 +52,7 @@ export function OperatorQueuePage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const errorId = 'operator-queue-error';
 
   function persistQuery(nextPage: number, nextSortBy = sortBy, nextSortDirection = sortDirection) {
     const nextParams = new URLSearchParams();
@@ -111,10 +112,10 @@ export function OperatorQueuePage() {
       <h2>Operator Queue</h2>
       <p>Filter incoming requests for manual triage. Admin authentication is planned in ACQ-AUTH-001.</p>
 
-      <form className="card form-grid" onSubmit={onApplyFilters}>
-        <label>
+      <form className="card form-grid" onSubmit={onApplyFilters} noValidate>
+        <label htmlFor="operator-queue-status-filter">
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <select id="operator-queue-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
             <option value="ALL">All statuses</option>
             {statusOptions.map((option) => (
               <option key={option} value={option}>
@@ -124,9 +125,9 @@ export function OperatorQueuePage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="operator-queue-category-filter">
           Category
-          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+          <select id="operator-queue-category-filter" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
             <option value="ALL">All categories</option>
             {categoryOptions.map((option) => (
               <option key={option} value={option}>
@@ -136,9 +137,9 @@ export function OperatorQueuePage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="operator-queue-country-filter">
           Country
-          <select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
+          <select id="operator-queue-country-filter" value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
             <option value="ALL">All countries</option>
             {countryOptions.map((option) => (
               <option key={option} value={option}>
@@ -148,37 +149,41 @@ export function OperatorQueuePage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="operator-queue-date-from-filter">
           Date from
-          <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+          <input id="operator-queue-date-from-filter" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
         </label>
 
-        <label>
+        <label htmlFor="operator-queue-date-to-filter">
           Date to
-          <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+          <input id="operator-queue-date-to-filter" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
         </label>
 
         <button type="submit">Apply filters</button>
-        <label>
+        <label htmlFor="operator-queue-sort-by-filter">
           Sort by
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}>
+          <select id="operator-queue-sort-by-filter" value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}>
             <option value="createdAt">Created date</option>
             <option value="budgetChf">Budget (CHF)</option>
           </select>
         </label>
 
-        <label>
+        <label htmlFor="operator-queue-sort-direction-filter">
           Direction
-          <select value={sortDirection} onChange={(event) => setSortDirection(event.target.value as SortDirection)}>
+          <select id="operator-queue-sort-direction-filter" value={sortDirection} onChange={(event) => setSortDirection(event.target.value as SortDirection)}>
             <option value="desc">Descending</option>
             <option value="asc">Ascending</option>
           </select>
         </label>
       </form>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p id={errorId} className="error" role="status" aria-live="polite">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="card">
+      <div className="card" aria-describedby={error ? errorId : undefined}>
         <p className="queue-summary">
           Visible requests: {records.length} (total matching: {total})
         </p>

@@ -25,6 +25,8 @@ export function CreateRequestPage() {
     urgency: 'STANDARD'
   });
 
+  const errorId = 'create-request-form-error';
+
   useEffect(() => {
     fetchCategories()
       .then((data) => setCategories(data.categories))
@@ -58,31 +60,38 @@ export function CreateRequestPage() {
     <section>
       <h2>Create Sourcing Request</h2>
       <p>We source options and provide an external purchase link. We are not the merchant.</p>
-      <form onSubmit={onSubmit} className="card form-grid">
-        <label>
+      <form onSubmit={onSubmit} className="card form-grid" noValidate>
+        <label htmlFor="create-request-email">
           Email
           <input
+            id="create-request-email"
             type="email"
             value={formData.userEmail}
             readOnly
             required
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
 
-        <label>
+        <label htmlFor="create-request-budget">
           Budget (CHF)
           <input
+            id="create-request-budget"
             type="number"
             min={1}
             value={formData.budgetChf}
             onChange={(event) => setFormData((prev) => ({ ...prev, budgetChf: Number(event.target.value) }))}
             required
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
 
-        <label>
+        <label htmlFor="create-request-category">
           Category
           <select
+            id="create-request-category"
             value={formData.category}
             onChange={(event) => setFormData((prev) => ({ ...prev, category: event.target.value }))}
           >
@@ -94,9 +103,10 @@ export function CreateRequestPage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="create-request-condition">
           Condition
           <select
+            id="create-request-condition"
             value={formData.condition}
             onChange={(event) => setFormData((prev) => ({ ...prev, condition: event.target.value }))}
           >
@@ -105,9 +115,10 @@ export function CreateRequestPage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="create-request-country">
           Country (EU + CH)
           <select
+            id="create-request-country"
             value={formData.country}
             onChange={(event) => setFormData((prev) => ({ ...prev, country: event.target.value }))}
           >
@@ -119,9 +130,10 @@ export function CreateRequestPage() {
           </select>
         </label>
 
-        <label>
+        <label htmlFor="create-request-urgency">
           Urgency
           <select
+            id="create-request-urgency"
             value={formData.urgency}
             onChange={(event) => setFormData((prev) => ({ ...prev, urgency: event.target.value }))}
           >
@@ -131,18 +143,25 @@ export function CreateRequestPage() {
           </select>
         </label>
 
-        <label className="full-width">
+        <label className="full-width" htmlFor="create-request-specs">
           Specifications
           <textarea
+            id="create-request-specs"
             minLength={10}
             value={formData.specs}
             onChange={(event) => setFormData((prev) => ({ ...prev, specs: event.target.value }))}
             placeholder="Describe item expectations, preferred brands, must-haves, constraints."
             required
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p id={errorId} className="error" role="status" aria-live="polite">
+            {error}
+          </p>
+        ) : null}
 
         <button type="submit" disabled={submitting}>
           {submitting ? 'Creating...' : 'Create Request'}

@@ -202,4 +202,20 @@ describe('OperatorQueuePage', () => {
       expect(screen.getByTestId('location-search').textContent).toContain('page=2');
     });
   });
+
+  it('exposes deterministic filter control ids and error live-region semantics', async () => {
+    mockedFetchRequests.mockRejectedValue(new Error('network fail'));
+
+    renderQueuePage();
+
+    expect(screen.getByLabelText('Status').getAttribute('id')).toBe('operator-queue-status-filter');
+    expect(screen.getByLabelText('Date from').getAttribute('id')).toBe('operator-queue-date-from-filter');
+    expect(screen.getByLabelText('Date to').getAttribute('id')).toBe('operator-queue-date-to-filter');
+    expect(screen.getByLabelText('Sort by').getAttribute('id')).toBe('operator-queue-sort-by-filter');
+    expect(screen.getByLabelText('Direction').getAttribute('id')).toBe('operator-queue-sort-direction-filter');
+
+    const error = await screen.findByText('Could not load operator queue.');
+    expect(error.getAttribute('id')).toBe('operator-queue-error');
+    expect(error.getAttribute('aria-live')).toBe('polite');
+  });
 });

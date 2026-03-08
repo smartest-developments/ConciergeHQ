@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { requestPasswordReset } from '../api';
 
 export function ForgotPasswordPage() {
+  const errorId = 'forgot-password-error';
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +52,15 @@ export function ForgotPasswordPage() {
             onChange={(event) => setEmail(event.target.value)}
             required
             disabled={submitting}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p id={errorId} className="error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        ) : null}
         <button type="submit" disabled={submitting}>
           {submitting ? 'Sending...' : 'Send reset link'}
         </button>

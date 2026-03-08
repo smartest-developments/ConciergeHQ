@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../api';
 
 export function ResetPasswordPage() {
+  const errorId = 'reset-password-error';
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token')?.trim() ?? '';
   const [password, setPassword] = useState('');
@@ -63,6 +64,8 @@ export function ResetPasswordPage() {
             onChange={(event) => setPassword(event.target.value)}
             required
             disabled={submitting}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
         <label>
@@ -73,9 +76,15 @@ export function ResetPasswordPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
             required
             disabled={submitting}
+            aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? errorId : undefined}
           />
         </label>
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p id={errorId} className="error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        ) : null}
         <button type="submit" disabled={submitting}>
           {submitting ? 'Resetting...' : 'Reset password'}
         </button>

@@ -372,7 +372,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/components/AppShell.tsx`, `apps/web/src/styles.css`, `apps/web/tests/app-shell.test.tsx`
 - id: ACQ-REL-008B
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Audit and fix form control label/aria associations on auth/request/operator pages with deterministic RTL coverage.
   Evidence: `apps/web/src/pages`, `apps/web/tests`
 - id: ACQ-REL-008C

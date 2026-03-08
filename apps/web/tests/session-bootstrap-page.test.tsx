@@ -36,4 +36,30 @@ describe('SessionBootstrapPage', () => {
     expect(window.localStorage.getItem('acq_auth_session')).toContain('admin@example.com');
     expect(window.localStorage.getItem('acq_auth_session')).toContain('ADMIN');
   });
+
+  it('wires explicit label associations and announces validation errors', () => {
+    render(
+      <MemoryRouter initialEntries={['/auth/login']}>
+        <Routes>
+          <Route path="/auth/login" element={<SessionBootstrapPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const emailInput = screen.getByLabelText('Email');
+    const roleSelect = screen.getByLabelText('Role');
+
+    expect(emailInput.getAttribute('id')).toBe('session-bootstrap-email');
+    expect(roleSelect.getAttribute('id')).toBe('session-bootstrap-role');
+    expect(screen.getByText('Email').getAttribute('for')).toBe('session-bootstrap-email');
+    expect(screen.getByText('Role').getAttribute('for')).toBe('session-bootstrap-role');
+
+    fireEvent.change(emailInput, { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    const error = screen.getByText('Email is required.');
+    expect(error.getAttribute('id')).toBe('session-bootstrap-error');
+    expect(error.getAttribute('aria-live')).toBe('polite');
+    expect(emailInput.getAttribute('aria-describedby')).toBe('session-bootstrap-error');
+  });
 });
