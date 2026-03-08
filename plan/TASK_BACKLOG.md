@@ -342,9 +342,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/OPERATIONS.md`
 - id: ACQ-REL-006
   priority: P1
-  status: TODO
-  DoD: Add dependency vulnerability scanning + secret scanning in CI with failing thresholds.
+  status: DONE
+  DoD: Add dependency vulnerability scanning + secret scanning in CI with failing thresholds (`ACQ-REL-006A`, `ACQ-REL-006B`).
   Evidence: `.github/workflows`, `docs/SECURITY.md`
+- id: ACQ-REL-006A
+  priority: P1
+  status: DONE
+  DoD: Add dependency vulnerability scanning in CI with high/critical fail threshold.
+  Evidence: `.github/workflows/ci.yml`, `docs/SECURITY.md`
+- id: ACQ-REL-006B
+  priority: P1
+  status: DONE
+  DoD: Add repository secret scanning in CI so leaked credentials fail pull-request verification.
+  Evidence: `.github/workflows/ci.yml`, `docs/SECURITY.md`
 - id: ACQ-REL-007
   priority: P1
   status: TODO

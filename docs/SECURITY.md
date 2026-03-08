@@ -32,7 +32,9 @@
 
 ## Operational hardening backlog
 - Add CSRF protections when cookie sessions are introduced.
-- Add secret scanning and dependency vulnerability checks in CI.
+- CI now enforces dependency vulnerability and secret scanning gates:
+  - `npm audit --audit-level=high --omit=dev` fails builds on high/critical production dependency findings.
+  - `gitleaks/gitleaks-action@v2` fails builds when committed secrets are detected.
 
 ## 2026-03-06 Session Primitive Baseline (ACQ-AUTH-001A1)
 - Added backend session helper primitives in `apps/api/src/lib/sessionAuth.ts`:
