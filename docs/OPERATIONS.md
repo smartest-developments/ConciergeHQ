@@ -111,3 +111,31 @@ Post-incident minimum evidence:
 - Capture one 24h sample and record p95 + error-rate summary in `plan/PROGRESS_LOG.md`.
 - Capture one web-vitals sample set and confirm dashboard values meet LCP/CLS/INP targets.
 - Attach query/command snippets used for SLO computation in release evidence.
+
+## Customer Support + Admin Escalation Baseline (ACQ-REL-012)
+
+### Contact paths
+- Customer support inbox: `support@acquisition-concierge.example` (primary).
+- Operator escalation alias: `ops-escalation@acquisition-concierge.example`.
+- Security/legal escalation alias: `legal-security@acquisition-concierge.example`.
+
+### SLA targets
+- Initial customer acknowledgment: within 1 business day.
+- Request-status clarification (order state mismatch): within 8 business hours.
+- Fee/payment dispute triage handoff to operator: within 4 business hours.
+- Legal/security requests (privacy, abuse, compliance): acknowledge within 4 business hours, assign owner immediately.
+
+### Dispute + escalation playbook
+1. Capture evidence: request ID, timeline screenshot, payment session id, and latest status events.
+2. Classify severity:
+   - `SEV-3` informational/question only;
+   - `SEV-2` wrong status/payment mismatch with no financial impact;
+   - `SEV-1` duplicate charge, unauthorized access suspicion, or legal-risk wording incident.
+3. Route by severity:
+   - `SEV-3`: support owner resolves directly and records note in ticket.
+   - `SEV-2`: operator owner validates state-machine trail and replies with remediation ETA.
+   - `SEV-1`: page on-call operator + legal/security alias; post first status update within 30 minutes.
+4. Resolution criteria:
+   - Customer receives deterministic outcome summary.
+   - Ticket links request/audit evidence and applied remediation.
+   - If root cause is product defect, open follow-up backlog item and attach ticket ID.

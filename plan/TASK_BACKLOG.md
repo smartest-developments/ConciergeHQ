@@ -680,3 +680,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Run staging UAT and attach pass/fail evidence + release recommendation.
   Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
+
+## RUN_UPDATE_2026-03-09T00:41:20+0100
+- id: ACQ-REL-012
+  priority: P2
+  status: DONE
+  DoD: Add customer support/admin operational baseline (contact path, SLA targets, dispute/escalation handling playbook).
+  Evidence: `docs/OPERATIONS.md`
+- id: ACQ-REL-013
+  priority: P1
+  status: TODO
+  DoD: Add customer-visible support entrypoint in dashboard and operator queue detail with deterministic severity routing hints.
+  Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
