@@ -365,6 +365,41 @@ Behavior:
 - If a session token is present, matching non-revoked DB session is revoked (`revokedAt=now`).
 - Endpoint still returns `204` when no session cookie is present.
 
+## POST /api/admin/users/:userId/role
+Admin-only role assignment contract for user-management and role-change audit persistence.
+
+Example request:
+```json
+{
+  "role": "OPERATOR",
+  "requestId": 42,
+  "reason": "Promotion approved by admin"
+}
+```
+
+Responses:
+- `200` with:
+```json
+{
+  "user": {
+    "id": 31,
+    "email": "target@example.com",
+    "role": "OPERATOR"
+  },
+  "roleChanged": true,
+  "auditEventRecorded": true
+}
+```
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when params/body are invalid.
+- `401` with `{ "error": "AUTH_REQUIRED" }` when session is missing/invalid.
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when authenticated session is not `ADMIN`.
+- `404` with `{ "error": "USER_NOT_FOUND" }` when target user id is unknown.
+- `404` with `{ "error": "REQUEST_NOT_FOUND" }` when `requestId` is provided but request is unknown.
+
+Behavior:
+- Role update is idempotent (`roleChanged=false` when target already has requested role).
+- When `requestId` is provided, server appends a request status event with `metadata.roleChange` (`fromRole`, `toRole`, `targetUserId`) so admin audit trail consumers can render role-change evidence.
+
 ## POST /api/auth/forgot-password
 Request password recovery for an account.
 

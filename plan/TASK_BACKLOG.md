@@ -275,9 +275,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages`, `apps/api/src/routes/requests.ts`
 - id: ACQ-ADMIN-004
   priority: P2
-  status: TODO
-  DoD: Add admin user-management capabilities (role assignment + account disable/enable) with safety checks.
+  status: IN_PROGRESS
+  DoD: Add admin user-management capabilities (role assignment + account disable/enable) with safety checks via incremental slices `ACQ-ADMIN-004A..B`.
   Evidence: `apps/api/src/routes`, `apps/web/src/pages`, `docs/SECURITY.md`
+- id: ACQ-ADMIN-004A
+  priority: P2
+  status: DONE
+  DoD: Add admin-only role-assignment mutation API with optional request-linked role-change audit event persistence.
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
+- id: ACQ-ADMIN-004B
+  priority: P2
+  status: TODO
+  DoD: Add admin role-management UI with guarded role selection, confirmation UX, and request-context audit linkage controls.
+  Evidence: `apps/web/src/pages`, `apps/web/tests`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-005
   priority: P1
   status: IN_PROGRESS
@@ -300,9 +310,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-005B2
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Persist role-change status events from admin role-management flows so audit trail coverage is complete without manual metadata seeding.
-  Evidence: `apps/api/src/routes`, `apps/api/prisma/schema.prisma`, `apps/api/tests`
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/src/routes/requests.ts`, `apps/api/tests/auth-routes.test.ts`, `apps/api/tests/requests-list.test.ts`
 
 ## RELEASE_READINESS
 - id: ACQ-REL-001
@@ -619,8 +629,8 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/tests/request-checkout-proposal.test.ts`, `apps/api/src/routes/requests.ts`
 
 ## AUTO_RUN_2026-03-08T09:56:50+0100
-- [ACQ-ADMIN-005B] status note: BLOCKED by dependency `ACQ-ADMIN-004` (role-assignment mutation APIs/UI not implemented), so role-change audit events cannot be produced yet.
-- Suggested split: `ACQ-ADMIN-004A` backend role-assignment mutation + audit event persistence, `ACQ-ADMIN-004B` admin role-management UI with safety checks.
+- [ACQ-ADMIN-005B] unblock note: `ACQ-ADMIN-004A` backend role-assignment mutation + request-linked role-change audit persistence is now implemented.
+- Remaining split: `ACQ-ADMIN-004B` admin role-management UI with safety checks.
 
 ## AUTO_SPLIT_2026-03-08_ACQ-REL-002
 - id: ACQ-REL-002

@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { hashPassword, verifyPassword } from '../lib/passwordAuth.js'
+import { parseOperatorSessionRole } from '../lib/operatorRole.js'
 import {
   buildSessionClearCookie,
   buildSessionCookie,
@@ -30,6 +31,16 @@ const forgotPasswordSchema = z.object({
 const resetPasswordSchema = z.object({
   token: z.string().trim().min(32).max(256),
   password: z.string().min(8).max(128)
+})
+
+const adminRoleAssignmentParamsSchema = z.object({
+  userId: z.coerce.number().int().positive()
+})
+
+const adminRoleAssignmentSchema = z.object({
+  role: z.enum(['CUSTOMER', 'OPERATOR', 'ADMIN']),
+  requestId: z.coerce.number().int().positive().optional(),
+  reason: z.string().trim().min(3).max(500).optional()
 })
 
 const MAX_FAILED_LOGIN_ATTEMPTS = 5
@@ -353,6 +364,148 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     }
 
     reply.header('Set-Cookie', buildSessionClearCookie()).status(204).send()
+  })
+
+  app.post('/api/admin/users/:userId/role', async (req, reply) => {
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req)
+    const roleResult = parseOperatorSessionRole(sessionIdentity?.role ?? null)
+    if (!roleResult.ok) {
+      reply.status(roleResult.statusCode).send({ error: roleResult.error })
+      return
+    }
+
+    if (roleResult.role !== 'ADMIN') {
+      reply.status(403).send({ error: 'OPERATOR_FORBIDDEN' })
+      return
+    }
+
+    const parsedParams = adminRoleAssignmentParamsSchema.safeParse(req.params)
+    if (!parsedParams.success) {
+      reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      })
+      return
+    }
+
+    const parsedBody = adminRoleAssignmentSchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      })
+      return
+    }
+
+    const targetUser = await (
+      app.prisma as PrismaClient & {
+        user: {
+          findUnique: (args: {
+            where: { id: number }
+            select: { id: true; email: true; role: true }
+          }) => Promise<{ id: number; email: string; role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' } | null>
+          update: (args: {
+            where: { id: number }
+            data: { role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' }
+            select: { id: true; email: true; role: true }
+          }) => Promise<{ id: number; email: string; role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' }>
+        }
+      }
+    ).user.findUnique({
+      where: { id: parsedParams.data.userId },
+      select: { id: true, email: true, role: true }
+    })
+
+    if (!targetUser) {
+      reply.status(404).send({ error: 'USER_NOT_FOUND' })
+      return
+    }
+
+    const fromRole = targetUser.role
+    const toRole = parsedBody.data.role
+    const updatedUser =
+      fromRole === toRole
+        ? targetUser
+        : await (
+            app.prisma as PrismaClient & {
+              user: {
+                update: (args: {
+                  where: { id: number }
+                  data: { role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' }
+                  select: { id: true; email: true; role: true }
+                }) => Promise<{ id: number; email: string; role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' }>
+              }
+            }
+          ).user.update({
+            where: { id: targetUser.id },
+            data: { role: toRole },
+            select: { id: true, email: true, role: true }
+          })
+
+    let auditEventRecorded = false
+    if (parsedBody.data.requestId) {
+      const request = await (
+        app.prisma as PrismaClient & {
+          sourcingRequest: {
+            findUnique: (args: {
+              where: { id: number }
+              select: { id: true; status: true }
+            }) => Promise<{ id: number; status: string } | null>
+          }
+        }
+      ).sourcingRequest.findUnique({
+        where: { id: parsedBody.data.requestId },
+        select: { id: true, status: true }
+      })
+
+      if (!request) {
+        reply.status(404).send({ error: 'REQUEST_NOT_FOUND' })
+        return
+      }
+
+      await (
+        app.prisma as PrismaClient & {
+          requestStatusEvent: {
+            create: (args: {
+              data: {
+                requestId: number
+                fromStatus: string
+                toStatus: string
+                reason: string
+                metadata: Record<string, unknown>
+              }
+            }) => Promise<{ id: number }>
+          }
+        }
+      ).requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: request.status,
+          reason: parsedBody.data.reason ?? 'Admin role assignment recorded',
+          metadata: {
+            operatorRole: roleResult.role,
+            roleChange: {
+              fromRole,
+              toRole: updatedUser.role,
+              targetUserId: updatedUser.id
+            }
+          }
+        }
+      })
+
+      auditEventRecorded = true
+    }
+
+    reply.status(200).send({
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role
+      },
+      roleChanged: fromRole !== updatedUser.role,
+      auditEventRecorded
+    })
   })
 
   app.post('/api/auth/forgot-password', async (req, reply) => {

@@ -19,7 +19,8 @@ const makePrismaMock = () =>
     user: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
-      create: vi.fn()
+      create: vi.fn(),
+      update: vi.fn()
     },
     userCredential: {
       create: vi.fn(),
@@ -392,6 +393,113 @@ describe('auth routes', () => {
     expect(response.json()).toEqual({ error: 'INVALID_RESET_TOKEN' })
     await app.close()
   }, 15_000)
+
+  it('requires admin session for role assignment endpoint', async () => {
+    const prisma = makePrismaMock()
+    prisma.session.findUnique.mockResolvedValue({
+      id: 1,
+      revokedAt: null,
+      expiresAt: new Date('2030-03-08T00:00:00.000Z'),
+      user: {
+        id: 17,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/users/22/role',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=session-token-admin`
+      },
+      payload: {
+        role: 'ADMIN'
+      }
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toEqual({ error: 'OPERATOR_FORBIDDEN' })
+    expect(prisma.user.update).not.toHaveBeenCalled()
+    await app.close()
+  })
+
+  it('updates target user role and writes role-change audit metadata when request context is provided', async () => {
+    const prisma = makePrismaMock()
+    prisma.session.findUnique.mockResolvedValue({
+      id: 2,
+      revokedAt: null,
+      expiresAt: new Date('2030-03-08T00:00:00.000Z'),
+      user: {
+        id: 9,
+        email: 'admin@example.com',
+        role: 'ADMIN'
+      }
+    })
+    prisma.user.findUnique.mockResolvedValueOnce({
+      id: 31,
+      email: 'target@example.com',
+      role: 'CUSTOMER'
+    })
+    prisma.user.update.mockResolvedValue({
+      id: 31,
+      email: 'target@example.com',
+      role: 'OPERATOR'
+    })
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 88,
+      status: 'SOURCING'
+    })
+    prisma.requestStatusEvent.create.mockResolvedValue({ id: 991 })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/users/31/role',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=session-token-admin`
+      },
+      payload: {
+        role: 'OPERATOR',
+        requestId: 88,
+        reason: 'Promotion approved by admin'
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      user: {
+        id: 31,
+        email: 'target@example.com',
+        role: 'OPERATOR'
+      },
+      roleChanged: true,
+      auditEventRecorded: true
+    })
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 31 },
+      data: { role: 'OPERATOR' },
+      select: { id: true, email: true, role: true }
+    })
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId: 88,
+        fromStatus: 'SOURCING',
+        toStatus: 'SOURCING',
+        reason: 'Promotion approved by admin',
+        metadata: expect.objectContaining({
+          operatorRole: 'ADMIN',
+          roleChange: {
+            fromRole: 'CUSTOMER',
+            toRole: 'OPERATOR',
+            targetUserId: 31
+          }
+        })
+      })
+    })
+    await app.close()
+  })
 
   it('resets password, consumes token, and revokes active sessions', async () => {
     const prisma = makePrismaMock()
