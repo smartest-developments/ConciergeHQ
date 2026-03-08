@@ -28,3 +28,9 @@ Run with write access to `/plan` so backlog/progress updates can be committed to
 ## 2026-03-06T20:31:36+0100
 - Automation blocker: repository is read-only in this environment (`Operation not permitted` on file writes), so ACQ auth/gap increments and backlog/progress updates could not be applied.
 - 2026-03-08T09:56:50+0100 — Blocked `ACQ-ADMIN-005B` (role-change audit trail) because sandbox denied writes in this repo (`Operation not permitted`) and dependency `ACQ-ADMIN-004` (role assignment APIs/UI) is not yet implemented.
+
+## 2026-03-08T23:10:00+0100 - Commit blocked by git index lock
+- scope: `ACQ-REL-009A` docs/backlog/progress updates are ready and quality gates are green.
+- blocker: `git add -A` fails with `Unable to create .git/index.lock: Operation not permitted` in this run context.
+- next: retry commit/push when index lock write permission is restored.
+- 2026-03-08T23:55:00+0100 - Cross-repo automation blocker: sandbox write permission denied for `/Users/simones/Developer/AllVision` and `/Users/simones/Developer/GlobalAgent` in this run context (`Operation not permitted` on write probes), preventing required backlog/code/doc updates in those repos.

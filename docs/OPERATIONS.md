@@ -94,3 +94,20 @@ Post-incident minimum evidence:
 - Root cause and trigger path.
 - Customer impact scope.
 - Immediate fix + follow-up backlog tasks.
+
+## Performance SLO Baseline (ACQ-REL-009A)
+
+### SLO targets
+- API latency: `GET /api/requests` and `POST /api/requests` p95 <= 1200ms over 15-minute windows.
+- API error budget: 5xx rate <= 1% per day for customer-critical endpoints.
+- Web vitals: dashboard `LCP <= 2.5s`, `CLS <= 0.1`, `INP <= 200ms` on representative 4G mobile profile.
+
+### Measurement baseline
+- API: compute p95 and error rate from `http_request_completed` logs by route and status code.
+- Web: sample `web-vitals` telemetry stream and aggregate by route (`/`, `/dashboard`, `/operator/queue`).
+- Breach policy: two consecutive windows above threshold open a `SEV-2` investigation.
+
+### Verification checklist
+- Capture one 24h sample and record p95 + error-rate summary in `plan/PROGRESS_LOG.md`.
+- Capture one web-vitals sample set and confirm dashboard values meet LCP/CLS/INP targets.
+- Attach query/command snippets used for SLO computation in release evidence.

@@ -111,3 +111,15 @@
 - quality gates: pending in this automation pass.
 - next: `ACQ-REL-009` performance SLO validation instrumentation.
 - 2026-03-08T22:40:00+0100 - ACQ-REL-010A dashboard proposal-open funnel telemetry (UI) - Result: added shared web telemetry helper (`apps/web/src/telemetry.ts`) and instrumented dashboard proposal link clicks to emit `[telemetry:funnel]` events with `{ event: 'proposal_open', requestId }`. Added dashboard test coverage asserting telemetry emission on proposal-link click. Backlog maintenance: appended run-update split (`ACQ-REL-010` IN_PROGRESS, `ACQ-REL-010A` DONE, `ACQ-REL-010B` TODO). Quality gates: pending in this automation pass. Next: ACQ-REL-010B request-create + checkout funnel events.
+
+## 2026-03-08T23:05:00+0100 - ACQ-REL-009A performance SLO baseline definition
+- task: split `ACQ-REL-009` and complete baseline SLO-definition slice (`ACQ-REL-009A`).
+- result:
+  - added explicit API latency/error-budget and web vitals SLO targets in `docs/OPERATIONS.md`;
+  - documented measurement method, breach policy, and evidence checklist for release readiness.
+- backlog update:
+  - moved `ACQ-REL-009` to `IN_PROGRESS`;
+  - added `ACQ-REL-009A` DONE and `ACQ-REL-009B` TODO in `plan/TASK_BACKLOG.md`.
+- quality gates: already green in this run (`lint`, `typecheck`, `test`, `build`).
+- next: execute `ACQ-REL-009B` load sample and capture p95/web-vitals evidence.
+- 2026-03-08T23:55:00+0100 - ACQ-REL-011A UAT report scaffold + backlog reconciliation - Result: published `docs/UAT_REPORT.md` with deterministic staging run metadata, entry criteria, scenario matrix, defect log, and sign-off schema; reconciled release backlog drift by marking `ACQ-REL-010` DONE (telemetry already shipped) and splitting `ACQ-REL-011` into `ACQ-REL-011A` DONE + `ACQ-REL-011B` TODO for staging execution evidence. Quality gates: pending in this automation pass. Next: execute `ACQ-REL-011B` in staging and populate real evidence.

@@ -392,19 +392,40 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src`, `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-009
   priority: P1
-  status: TODO
+  status: IN_PROGRESS
   DoD: Define and validate performance SLOs (API p95 latency and web Core Web Vitals targets) under realistic load.
   Evidence: `docs/OPERATIONS.md`
-- id: ACQ-REL-010
+- id: ACQ-REL-009A
+  priority: P1
+  status: DONE
+  DoD: Define explicit API and web performance SLO targets with breach policy and measurement method.
+  Evidence: `docs/OPERATIONS.md`, `plan/PROGRESS_LOG.md`
+- id: ACQ-REL-009B
   priority: P1
   status: TODO
+  DoD: Execute one realistic-load measurement run and attach API p95 + web vitals evidence to release docs.
+  Evidence: `docs/OPERATIONS.md`, `plan/PROGRESS_LOG.md`
+
+- id: ACQ-REL-010
+  priority: P1
+  status: DONE
   DoD: Add product analytics/funnel instrumentation for request creation, checkout start/success/failure, proposal open.
   Evidence: `apps/web/src/telemetry.ts`, `apps/web/src/pages/CreateRequestPage.tsx`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/PaymentSuccessPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`, `docs/PRD.md`
 - id: ACQ-REL-011
   priority: P1
+  status: IN_PROGRESS
+  DoD: Execute end-to-end UAT script in staging and capture release sign-off report with known limitations via bounded slices `ACQ-REL-011A..B`.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
+- id: ACQ-REL-011A
+  priority: P1
+  status: DONE
+  DoD: Publish UAT report template/checklist with deterministic sign-off fields, known-limitations log, and go/no-go summary schema.
+  Evidence: `docs/UAT_REPORT.md`, `plan/TASK_BACKLOG.md`
+- id: ACQ-REL-011B
+  priority: P1
   status: TODO
-  DoD: Execute end-to-end UAT script in staging and capture release sign-off report with known limitations.
-  Evidence: `docs/UAT_REPORT.md`
+  DoD: Execute staging UAT script and populate `docs/UAT_REPORT.md` with evidence and final release recommendation.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-012
   priority: P2
   status: TODO
@@ -628,19 +649,24 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   DoD: API integration tests stay deterministic under real current dates by using non-expired session fixtures and order tolerant assertions where timeline and audit arrays may contain multiple valid entries.
   Evidence: apps/api/tests/auth-routes.test.ts, apps/api/tests/requests-list.test.ts
 
-## RUN_UPDATE_2026-03-08T22:40:00+0100
+## RUN_UPDATE_2026-03-08T23:55:00+0100
 - id: ACQ-REL-010
   priority: P1
+  status: DONE
+  DoD: Product funnel telemetry instrumentation completed across request creation, checkout start/success/failure, and proposal-open interactions; backlog canonical state reconciled with implemented code evidence.
+  Evidence: `apps/web/src/telemetry.ts`, `apps/web/src/pages/CreateRequestPage.tsx`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/src/pages/PaymentSuccessPage.tsx`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`, `docs/PRD.md`
+- id: ACQ-REL-011
+  priority: P1
   status: IN_PROGRESS
-  DoD: Add product analytics/funnel instrumentation for request creation, checkout start/success/failure, proposal open via incremental slices `ACQ-REL-010A..B`.
-  Evidence: `apps/web/src`, `docs/PRD.md`
-- id: ACQ-REL-010A
+  DoD: Split UAT sign-off into executable slices and complete template/report scaffold before staging execution evidence.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
+- id: ACQ-REL-011A
   priority: P1
   status: DONE
-  DoD: Instrument dashboard proposal link opens with deterministic funnel telemetry payloads for request-level analysis.
-  Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/telemetry.ts`, `apps/web/tests/dashboard-page.test.tsx`
-- id: ACQ-REL-010B
+  DoD: UAT report template and deterministic sign-off schema are published for staging execution.
+  Evidence: `docs/UAT_REPORT.md`
+- id: ACQ-REL-011B
   priority: P1
   status: TODO
-  DoD: Instrument request creation and checkout start/success/failure funnel events with deterministic payload keys.
-  Evidence: `apps/web/src/pages/CreateRequestPage.tsx`, `apps/web/src/pages/PaymentPage.tsx`, `apps/web/tests`
+  DoD: Run staging UAT and attach pass/fail evidence + release recommendation.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
