@@ -11,6 +11,7 @@ import { SessionBootstrapPage } from './pages/SessionBootstrapPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { LegalPage } from './pages/LegalPage';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: '/auth/forgot', element: <ForgotPasswordPage /> },
       { path: '/auth/reset', element: <ResetPasswordPage /> },
       { path: '/auth/session', element: <Navigate to="/auth/login" replace /> },
+      { path: '/legal', element: <LegalPage /> },
       {
         path: '/requests/new',
         element: (

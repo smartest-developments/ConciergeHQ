@@ -21,7 +21,7 @@ describe('AppShell', () => {
     window.localStorage.setItem('acq_auth_session', JSON.stringify({ email: 'operator@example.com', role: 'OPERATOR' }));
   });
 
-  it('renders the product title', () => {
+  it('renders shell navigation and legal links', () => {
     render(
       <MemoryRouter>
         <AppShell />
@@ -29,13 +29,12 @@ describe('AppShell', () => {
     );
 
     expect(screen.getByText('Acquisition Concierge')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Skip to main content' }).getAttribute('href')).toBe('#main-content');
     expect(screen.getByRole('link', { name: 'Operator Queue' }).getAttribute('href')).toBe('/operator/queue');
     expect(screen.getByRole('link', { name: 'Sign In' }).getAttribute('href')).toBe('/auth/login');
     expect(screen.getByRole('link', { name: 'Create Account' }).getAttribute('href')).toBe('/auth/register');
-    expect(screen.getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe('#legal-privacy');
-    expect(screen.getByRole('link', { name: 'Terms of Service' }).getAttribute('href')).toBe('#legal-terms');
+    expect(screen.getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe('/legal#legal-privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' }).getAttribute('href')).toBe('/legal#legal-terms');
     expect(screen.getByText(/operator@example\.com/)).toBeTruthy();
-    expect(screen.getByText(/GDPR export\/deletion rights/i)).toBeTruthy();
-    expect(screen.getByText(/non-refundable once work begins/i)).toBeTruthy();
   });
 });

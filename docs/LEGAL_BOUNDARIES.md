@@ -24,6 +24,11 @@ Acquisition Concierge is a sourcing and research service. We are not a seller, r
 - Users are responsible for customs/import obligations when applicable.
 - Refund handling follows the non-refundable sourcing-fee policy above and explicit case-by-case legal review where required.
 
+## UI publication path
+- Public legal summary is published at `/legal` and linked from footer navigation.
+- Privacy anchor: `/legal#legal-privacy`
+- Terms anchor: `/legal#legal-terms`
+
 ## After-sales exclusion
 Acquisition Concierge does not provide:
 - Returns processing
