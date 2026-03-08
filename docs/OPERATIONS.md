@@ -25,6 +25,14 @@ Last updated: **2026-03-08**
 - Track proposal expiry worker outcomes: processed, skipped, and conflict-safe no-op counts.
 - Track rate-limit responses (`429`) by endpoint.
 
+## Instrumentation Verification (ACQ-REL-004B)
+- API emits structured `http_request_completed` logs with `route`, `method`, `requestId`, `statusCode`, and `latencyMs`.
+- Web app emits lightweight `web-vitals` telemetry (`first-contentful-paint`, `largest-contentful-paint`, `layout-shift`) via `PerformanceObserver`.
+- Verification checklist:
+  - Trigger one API request and confirm `http_request_completed` includes non-null `latencyMs`.
+  - Load dashboard and confirm browser logs include `[telemetry:web-vitals]` entries.
+  - Confirm no sensitive fields are present in API or web telemetry payloads.
+
 ## Incident Response Baseline (ACQ-REL-005 precursor)
 
 Severity matrix preview:

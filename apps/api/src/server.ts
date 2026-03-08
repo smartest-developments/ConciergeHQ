@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import type { PrismaClient } from '@prisma/client';
+import type { FastifyRequest } from 'fastify';
 import { prisma as defaultPrisma } from './lib/prisma.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerCategoriesRoute } from './routes/categories.js';
@@ -12,6 +13,10 @@ import { getCorsConfig } from './lib/runtimeConfig.js';
 declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
+  }
+
+  interface FastifyRequest {
+    requestStartNs?: bigint;
   }
 }
 
@@ -31,6 +36,29 @@ export function createServer(prismaClient: PrismaClient = defaultPrisma) {
   });
 
   app.decorate('prisma', prismaClient);
+
+  app.addHook('onRequest', async (request) => {
+    request.requestStartNs = process.hrtime.bigint();
+  });
+
+  app.addHook('onResponse', async (request: FastifyRequest, reply) => {
+    const startNs = request.requestStartNs;
+    const latencyMs =
+      typeof startNs === 'bigint' ? Number((process.hrtime.bigint() - startNs) / 1000000n) : null;
+
+    request.log.info(
+      {
+        event: 'http_request_completed',
+        service: 'conciergehq-api',
+        route: request.routeOptions.url,
+        method: request.method,
+        requestId: request.id,
+        statusCode: reply.statusCode,
+        latencyMs
+      },
+      'request completed'
+    );
+  });
 
   app.register(registerHealthRoute);
   app.register(registerCategoriesRoute);
