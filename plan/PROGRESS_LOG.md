@@ -89,3 +89,14 @@
 - 2026-03-08T09:56:50+0100 — Blocked on ACQ-ADMIN-005B role-change audit trail extension. Read audit confirms no role-assignment mutation API/UI exists yet (`ACQ-ADMIN-004` is TODO), so role-change events cannot be emitted/rendered safely in this increment. Sandbox restrictions also intermittently denied write probes in this repo. Next: deliver `ACQ-ADMIN-004A` role-assignment API foundation, then resume `ACQ-ADMIN-005B`.
 - 2026-03-08T17:20:00+0100 - ACQ-REL-008B form-control accessibility associations (UI) - Result: added explicit label-control id associations and live-region error semantics on request/auth/operator forms in CreateRequestPage, SessionBootstrapPage, and OperatorQueuePage. Added deterministic RTL assertions for control IDs and error live-region wiring in apps/web/tests/session-bootstrap-page.test.tsx and apps/web/tests/operator-queue-page.test.tsx. Backlog maintenance: marked ACQ-REL-008B DONE under ACQ-REL-008 accessibility wave. Quality gates: pending in this automation pass. Next: ACQ-REL-008C keyboard-only + contrast checklist evidence in release runbook.
 - 2026-03-08T18:25:00+0100 - ACQ-REL-008B gate verification - Result: full repository quality gates passed after accessibility updates (`npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`). Next: ACQ-REL-008C keyboard-only navigation and contrast checklist evidence capture.
+
+## 2026-03-08T19:05:00+0100 - ACQ-REL-007 legal/privacy publication hardening
+- task: complete `ACQ-REL-007` by shipping production-ready legal policy docs and aligning the `/legal` UI summary with explicit policy anchors.
+- result:
+  - added dedicated policy documents `docs/PRIVACY_POLICY.md` and `docs/TERMS_OF_SERVICE.md` with scope, retention, rights, liability, and service-boundary terms;
+  - expanded `apps/web/src/pages/LegalPage.tsx` with explicit last-updated marker and structured privacy/terms bullet points that mirror legal boundary constraints;
+  - updated legal page test coverage in `apps/web/tests/legal-page.test.tsx` for updated copy and contract anchors.
+- backlog/docs:
+  - marked `ACQ-REL-007` DONE in `plan/TASK_BACKLOG.md` with refreshed evidence paths.
+- quality gates:
+  - pending repo gate run (`lint`, `typecheck`, `test`, `build`).

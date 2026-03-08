@@ -357,9 +357,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `.github/workflows/ci.yml`, `docs/SECURITY.md`
 - id: ACQ-REL-007
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Add production-ready legal/privacy docs (Privacy Policy, Terms, refund/legal boundary consistency) linked from UI.
-  Evidence: `docs/LEGAL_BOUNDARIES.md`, `apps/web/src/components/AppShell.tsx`
+  Evidence: `docs/LEGAL_BOUNDARIES.md`, `docs/PRIVACY_POLICY.md`, `docs/TERMS_OF_SERVICE.md`, `apps/web/src/components/AppShell.tsx`, `apps/web/src/pages/LegalPage.tsx`
 - id: ACQ-REL-008
   priority: P1
   status: DONE
