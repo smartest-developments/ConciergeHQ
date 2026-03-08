@@ -317,9 +317,19 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `.github/workflows/deploy.yml`, `docs/RELEASE_RUNBOOK.md`
 - id: ACQ-REL-003
   priority: P0
-  status: TODO
-  DoD: Add tested DB backup/restore + migration rollback runbook with one successful dry-run in staging.
+  status: IN_PROGRESS
+  DoD: Deliver backup/restore + migration rollback runbook and execute one staging dry-run with recorded evidence.
   Evidence: `docs/RELEASE_RUNBOOK.md`, `apps/api/prisma/migrations`
+- id: ACQ-REL-003A
+  priority: P0
+  status: DONE
+  DoD: Publish explicit staging dry-run procedure (backup creation, restore rollback, gate rerun) and evidence template in release runbook.
+  Evidence: `docs/RELEASE_RUNBOOK.md`
+- id: ACQ-REL-003B
+  priority: P0
+  status: TODO
+  DoD: Execute one staging dry-run using the ACQ-REL-003 procedure and attach command/output evidence in progress log and release notes.
+  Evidence: `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-004
   priority: P1
   status: TODO

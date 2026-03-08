@@ -56,5 +56,50 @@ Workflow file: `.github/workflows/deploy.yml`
 - Manual production deploy requires explicit `release_tag` input.
 - Post-deploy web smoke checks run automatically and block production completion when regressions are detected.
 
+## ACQ-REL-003 backup/restore + migration rollback dry-run
+### Scope and guardrails
+- Run this procedure in staging only.
+- Freeze schema changes for the dry-run window (no concurrent migration deploys).
+- Keep production data out of staging snapshots.
+
+### Inputs
+- `DATABASE_URL` for staging app database.
+- Access to Postgres client tools (`pg_dump`, `pg_restore`, `psql`).
+- Git tag or commit SHA for current release and previous known-good release.
+
+### Dry-run procedure
+1. Capture baseline release + schema state.
+   - `git rev-parse --short HEAD`
+   - `npm --workspace apps/api run prisma -- migrate status`
+2. Create a compressed logical backup.
+   - `pg_dump --format=custom --file=backup_pre_rel003.dump "$DATABASE_URL"`
+3. Verify backup artifact integrity.
+   - `pg_restore --list backup_pre_rel003.dump >/tmp/backup_pre_rel003.list`
+   - Confirm `/tmp/backup_pre_rel003.list` is non-empty.
+4. Apply a reversible migration candidate in staging.
+   - `npm --workspace apps/api run prisma -- migrate deploy`
+5. Validate application + API health after migration.
+   - `npm run lint`
+   - `npm run typecheck`
+   - `npm run test`
+   - `npm run build`
+6. Execute rollback restore into staging DB.
+   - `pg_restore --clean --if-exists --no-owner --no-privileges --dbname="$DATABASE_URL" backup_pre_rel003.dump`
+7. Re-run schema + API checks after restore.
+   - `npm --workspace apps/api run prisma -- migrate status`
+   - `npm run test`
+8. Record evidence in release notes and progress log.
+
+### Dry-run evidence template
+- Date/time window:
+- Operator:
+- Baseline commit/tag:
+- Backup artifact: `backup_pre_rel003.dump`
+- Backup integrity check (`pg_restore --list`): PASS/FAIL
+- Migration deploy result: PASS/FAIL
+- Restore rollback result: PASS/FAIL
+- Post-restore gate results (`lint/typecheck/test/build`):
+- Follow-up actions:
+
 ## Notes
 - Replace placeholder `echo` deployment commands with provider-specific deploy commands once infrastructure target is finalized.
