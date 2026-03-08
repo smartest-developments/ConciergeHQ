@@ -101,5 +101,28 @@ Workflow file: `.github/workflows/deploy.yml`
 - Post-restore gate results (`lint/typecheck/test/build`):
 - Follow-up actions:
 
+## ACQ-REL-008C keyboard-only + contrast checklist evidence
+### Scope
+- App shell + auth/session flow (`/auth/login`, `/auth/session`).
+- Customer request creation flow (`/requests/new`).
+- Operator queue + request detail surfaces (`/operator/queue`, `/operator/requests/:requestId`).
+
+### Checklist execution (2026-03-08)
+1. Keyboard-only navigation checks:
+   - Verified tab order reaches skip link, primary nav items, form controls, and submit actions in visual order.
+   - Verified `Enter` and `Space` activate buttons/links across request and operator flows.
+   - Verified no keyboard trap in queue filters, detail actions, or proposal controls.
+2. Focus visibility checks:
+   - Verified global `:focus-visible` outline is present on links, buttons, and text/select/textarea controls.
+   - Verified skip-link becomes visible on focus and moves focus target to `#main-content`.
+3. Contrast checks (manual):
+   - Verified high-importance text and controls meet WCAG 2.1 AA contrast target (>= 4.5:1 for normal text, >= 3:1 for large text/UI indicators).
+   - Spot-checked primary text, muted helper text, focus outlines, and action buttons on app shell + operator pages.
+
+### Findings
+- No keyboard blocker found in the sampled release-critical UI flows.
+- No failing contrast pair detected in sampled controls/copy.
+- Existing accessibility baseline from `ACQ-REL-008A` and form semantics fixes from `ACQ-REL-008B` remain valid.
+
 ## Notes
 - Replace placeholder `echo` deployment commands with provider-specific deploy commands once infrastructure target is finalized.

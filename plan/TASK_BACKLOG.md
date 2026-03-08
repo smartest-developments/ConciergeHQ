@@ -362,7 +362,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/LEGAL_BOUNDARIES.md`, `apps/web/src/components/AppShell.tsx`
 - id: ACQ-REL-008
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Complete UI accessibility pass (WCAG 2.1 AA basics: keyboard nav, labels, focus states, contrast) with findings resolved via `ACQ-REL-008A..C`.
   Evidence: `apps/web/src`, `e2e`
 - id: ACQ-REL-008A
@@ -377,7 +377,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages`, `apps/web/tests`
 - id: ACQ-REL-008C
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Run keyboard-only navigation + contrast checklist on top UI flows and record findings in release readiness docs.
   Evidence: `apps/web/src`, `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-009
