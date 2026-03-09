@@ -876,6 +876,82 @@ describe('support-ticket intake endpoint', () => {
 
     await app.close();
   });
+
+  it('accepts support-ticket source values emitted by dashboard and operator detail UIs', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 504,
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 12,
+        email: 'customer@example.com',
+        role: 'CUSTOMER'
+      }
+    });
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 91,
+      status: RequestStatus.SOURCING,
+      user: { id: 12 }
+    });
+    prisma.requestStatusEvent.create.mockResolvedValue({
+      id: 778,
+      occurredAt: new Date('2026-03-09T10:15:00.000Z')
+    });
+
+    const app = createServer(prisma as never);
+
+    const dashboardSourceResponse = await app.inject({
+      method: 'POST',
+      url: '/api/requests/91/support-ticket',
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer` },
+      payload: {
+        severity: 'SEV-3',
+        source: 'CUSTOMER_DASHBOARD',
+        message: 'Dashboard request row has stale status and needs a refresh.'
+      }
+    });
+    expect(dashboardSourceResponse.statusCode).toBe(201);
+
+    const operatorSourceResponse = await app.inject({
+      method: 'POST',
+      url: '/api/requests/91/support-ticket',
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer` },
+      payload: {
+        severity: 'SEV-2',
+        source: 'OPERATOR_DETAIL',
+        message: 'Operator detail timeline and payment state are inconsistent.'
+      }
+    });
+    expect(operatorSourceResponse.statusCode).toBe(201);
+
+    expect(prisma.requestStatusEvent.create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: {
+            supportTicket: expect.objectContaining({
+              source: 'CUSTOMER_DASHBOARD'
+            })
+          }
+        })
+      })
+    );
+    expect(prisma.requestStatusEvent.create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: {
+            supportTicket: expect.objectContaining({
+              source: 'OPERATOR_DETAIL'
+            })
+          }
+        })
+      })
+    );
+
+    await app.close();
+  });
 });
 
 describe('checkout/payment/proposal unhappy-path validations', () => {

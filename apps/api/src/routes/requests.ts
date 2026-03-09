@@ -64,7 +64,9 @@ const transitionRequestStatusSchema = z.object({
 const supportTicketSchema = z.object({
   severity: z.enum(['SEV-1', 'SEV-2', 'SEV-3']),
   message: z.string().trim().min(10).max(2000),
-  source: z.enum(['DASHBOARD', 'OPERATOR_QUEUE']).default('DASHBOARD')
+  source: z
+    .enum(['DASHBOARD', 'OPERATOR_QUEUE', 'CUSTOMER_DASHBOARD', 'OPERATOR_DETAIL'])
+    .default('DASHBOARD')
 });
 
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;

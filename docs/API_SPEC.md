@@ -252,14 +252,14 @@ Example request:
 {
   "severity": "SEV-2",
   "message": "Checkout confirmation is missing after payment completion.",
-  "source": "DASHBOARD"
+  "source": "CUSTOMER_DASHBOARD"
 }
 ```
 
 Supported payload fields:
 - `severity`: `SEV-1|SEV-2|SEV-3`
 - `message`: trimmed string, `10..2000` chars
-- `source`: `DASHBOARD|OPERATOR_QUEUE` (defaults to `DASHBOARD`)
+- `source`: `DASHBOARD|OPERATOR_QUEUE|CUSTOMER_DASHBOARD|OPERATOR_DETAIL` (defaults to `DASHBOARD`)
 
 Example response:
 ```json

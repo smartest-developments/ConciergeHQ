@@ -191,6 +191,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: Harden forgot/reset password UX with deterministic API-error messaging and disabled-submit guards while requests are in flight.
   Evidence: `apps/web/src/pages/ForgotPasswordPage.tsx`, `apps/web/src/pages/ResetPasswordPage.tsx`, `apps/web/tests/forgot-reset-page.test.tsx`
+- id: ACQ-AUTO-023
+  priority: P1
+  status: DONE
+  DoD: Align support-ticket source contracts between API validation and UI emitters so dashboard/operator support submission is accepted without false `VALIDATION_ERROR`.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `docs/API_SPEC.md`
 
 ## AUTH_ADMIN_ESSENTIALS
 - id: ACQ-AUTH-001
@@ -460,9 +465,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 ## TECH_DEBT
 - id: ACQ-DEBT-001
   priority: P1
-  status: TODO
+  status: DONE
   DoD: Remove direct email filter query from dashboard API once auth is added.
-  Evidence: `apps/api/src/routes/requests.ts`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/web/src/pages/DashboardPage.tsx`
 - id: ACQ-DEBT-002
   priority: P2
   status: TODO
