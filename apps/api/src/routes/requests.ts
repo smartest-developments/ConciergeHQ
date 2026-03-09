@@ -61,6 +61,12 @@ const transitionRequestStatusSchema = z.object({
   reason: z.string().trim().min(3).max(500).optional()
 });
 
+const supportTicketSchema = z.object({
+  severity: z.enum(['SEV-1', 'SEV-2', 'SEV-3']),
+  message: z.string().trim().min(10).max(2000),
+  source: z.enum(['DASHBOARD', 'OPERATOR_QUEUE']).default('DASHBOARD')
+});
+
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
 type AuditActionType = 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE';
 
@@ -493,6 +499,67 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
       status: updatedRequest.status,
       updatedAt: updatedRequest.updatedAt
     };
+  });
+
+  app.post('/api/requests/:id/support-ticket', async (req, reply) => {
+    const parsedParams = requestParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      });
+    }
+
+    const parsedBody = supportTicketSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      });
+    }
+
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req);
+    if (!sessionIdentity) {
+      return reply.status(401).send({ error: 'AUTH_REQUIRED' });
+    }
+
+    const request = await app.prisma.sourcingRequest.findUnique({
+      where: { id: parsedParams.data.id },
+      include: { user: { select: { id: true } } }
+    });
+    if (!request) {
+      return reply.status(404).send({ error: 'REQUEST_NOT_FOUND' });
+    }
+
+    if (sessionIdentity.role === 'CUSTOMER' && sessionIdentity.userId !== request.user.id) {
+      return reply.status(403).send({ error: 'REQUEST_FORBIDDEN' });
+    }
+
+    const createdEvent = await app.prisma.requestStatusEvent.create({
+      data: {
+        requestId: request.id,
+        fromStatus: request.status,
+        toStatus: request.status,
+        reason: `Support ticket submitted (${parsedBody.data.severity})`,
+        metadata: {
+          supportTicket: {
+            severity: parsedBody.data.severity,
+            message: parsedBody.data.message,
+            source: parsedBody.data.source,
+            submittedByRole: sessionIdentity.role,
+            submittedByUserId: sessionIdentity.userId
+          }
+        }
+      }
+    });
+
+    return reply.status(201).send({
+      ticketId: createdEvent.id,
+      requestId: request.id,
+      severity: parsedBody.data.severity,
+      status: 'OPEN',
+      createdAt: createdEvent.occurredAt
+    });
   });
 
   app.post('/api/requests/:id/checkout', async (req, reply) => {

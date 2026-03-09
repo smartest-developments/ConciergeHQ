@@ -235,6 +235,45 @@ Responses:
 - `404` with `{ "error": "REQUEST_NOT_FOUND" }`
 - `409` with `{ "error": "INVALID_STATUS_TRANSITION" }` when transition is disallowed
 
+## POST /api/requests/:id/support-ticket
+Authenticated support-ticket intake endpoint for request-linked escalation evidence.
+
+Example request:
+```json
+{
+  "severity": "SEV-2",
+  "message": "Checkout confirmation is missing after payment completion.",
+  "source": "DASHBOARD"
+}
+```
+
+Supported payload fields:
+- `severity`: `SEV-1|SEV-2|SEV-3`
+- `message`: trimmed string, `10..2000` chars
+- `source`: `DASHBOARD|OPERATOR_QUEUE` (defaults to `DASHBOARD`)
+
+Example response:
+```json
+{
+  "ticketId": 777,
+  "requestId": 42,
+  "severity": "SEV-2",
+  "status": "OPEN",
+  "createdAt": "2026-03-09T01:45:00.000Z"
+}
+```
+
+Responses:
+- `201` ticket intake event accepted
+- `400` with `{ "error": "VALIDATION_ERROR" }` when payload is invalid
+- `401` with `{ "error": "AUTH_REQUIRED" }` when session is missing or invalid
+- `403` with `{ "error": "REQUEST_FORBIDDEN" }` when a customer attempts intake for a non-owned request
+- `404` with `{ "error": "REQUEST_NOT_FOUND" }`
+
+Audit/event behavior:
+- Writes immutable request status event with same `fromStatus/toStatus` as current request state.
+- `metadata.supportTicket` contains `severity`, `message`, `source`, `submittedByRole`, and `submittedByUserId`.
+
 ## POST /api/requests/:id/checkout
 Create a PSP (Stripe Checkout) session for the sourcing fee.
 

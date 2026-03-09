@@ -657,6 +657,181 @@ describe('GET /api/requests list filters', () => {
   });
 });
 
+describe('support-ticket intake endpoint', () => {
+  const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  const originalWebBaseUrl = process.env.WEB_BASE_URL;
+  const originalCorsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS;
+
+  beforeEach(() => {
+    process.env.STRIPE_SECRET_KEY = originalStripeSecretKey ?? 'sk_test_123';
+    process.env.WEB_BASE_URL = originalWebBaseUrl ?? 'http://localhost:5173';
+    process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins ?? 'http://localhost:5173';
+  });
+
+  afterEach(() => {
+    process.env.STRIPE_SECRET_KEY = originalStripeSecretKey;
+    process.env.WEB_BASE_URL = originalWebBaseUrl;
+    process.env.CORS_ALLOWED_ORIGINS = originalCorsAllowedOrigins;
+  });
+
+  it('creates immutable support-ticket audit event for request owner session', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 501,
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 12,
+        email: 'customer@example.com',
+        role: 'CUSTOMER'
+      }
+    });
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 91,
+      status: RequestStatus.SOURCING,
+      user: { id: 12 }
+    });
+    prisma.requestStatusEvent.create.mockResolvedValue({
+      id: 777,
+      occurredAt: new Date('2026-03-09T01:45:00.000Z')
+    });
+
+    const app = createServer(prisma as never);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/91/support-ticket',
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer` },
+      payload: {
+        severity: 'SEV-2',
+        source: 'DASHBOARD',
+        message: 'Checkout confirmation is missing after payment completion.'
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: {
+        requestId: 91,
+        fromStatus: RequestStatus.SOURCING,
+        toStatus: RequestStatus.SOURCING,
+        reason: 'Support ticket submitted (SEV-2)',
+        metadata: {
+          supportTicket: {
+            severity: 'SEV-2',
+            source: 'DASHBOARD',
+            message: 'Checkout confirmation is missing after payment completion.',
+            submittedByRole: 'CUSTOMER',
+            submittedByUserId: 12
+          }
+        }
+      }
+    });
+    expect(response.json()).toEqual({
+      ticketId: 777,
+      requestId: 91,
+      severity: 'SEV-2',
+      status: 'OPEN',
+      createdAt: '2026-03-09T01:45:00.000Z'
+    });
+
+    await app.close();
+  });
+
+  it('rejects support-ticket creation without authenticated session', async () => {
+    const prisma = makePrismaMock();
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/91/support-ticket',
+      payload: {
+        severity: 'SEV-3',
+        source: 'DASHBOARD',
+        message: 'Need an update on delivery ETA for this request.'
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: 'AUTH_REQUIRED' });
+    expect(prisma.requestStatusEvent.create).not.toHaveBeenCalled();
+
+    await app.close();
+  });
+
+  it('rejects customer access to support-ticket creation for another owner request', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 502,
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 99,
+        email: 'other@example.com',
+        role: 'CUSTOMER'
+      }
+    });
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 44,
+      status: RequestStatus.FEE_PAID,
+      user: { id: 12 }
+    });
+    const app = createServer(prisma as never);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/requests/44/support-ticket',
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-customer` },
+      payload: {
+        severity: 'SEV-1',
+        source: 'DASHBOARD',
+        message: 'Critical account mismatch issue that blocks order completion.'
+      }
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toEqual({ error: 'REQUEST_FORBIDDEN' });
+    expect(prisma.requestStatusEvent.create).not.toHaveBeenCalled();
+
+    await app.close();
+  });
+
+  it('validates support-ticket payload severity and message length', async () => {
+    const prisma = makePrismaMock();
+    prisma.session.findUnique.mockResolvedValue({
+      id: 503,
+      expiresAt: new Date('2030-03-07T10:00:00.000Z'),
+      revokedAt: null,
+      user: {
+        id: 7,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    });
+    const app = createServer(prisma as never);
+
+    const invalidPayload = await app.inject({
+      method: 'POST',
+      url: '/api/requests/88/support-ticket',
+      headers: { cookie: `${AUTH_SESSION_COOKIE_NAME}=token-operator` },
+      payload: {
+        severity: 'SEV-4',
+        source: 'OPERATOR_QUEUE',
+        message: 'too short'
+      }
+    });
+
+    expect(invalidPayload.statusCode).toBe(400);
+    expect(invalidPayload.json()).toEqual(
+      expect.objectContaining({
+        error: 'VALIDATION_ERROR'
+      })
+    );
+    expect(prisma.sourcingRequest.findUnique).not.toHaveBeenCalled();
+
+    await app.close();
+  });
+});
+
 describe('checkout/payment/proposal unhappy-path validations', () => {
   const originalStripeSecretKey = process.env.STRIPE_SECRET_KEY;
   const originalWebBaseUrl = process.env.WEB_BASE_URL;

@@ -704,3 +704,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add backend support-ticket intake endpoint with severity validation and immutable audit event for operator workflows.
   Evidence: `apps/api/src/routes`, `apps/api/tests`, `docs/API_SPEC.md`
+
+## RUN_UPDATE_2026-03-09T02:25:00+0100
+- id: ACQ-REL-014
+  priority: P1
+  status: DONE
+  DoD: Add backend support-ticket intake endpoint with severity validation and immutable audit event for operator workflows.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `docs/API_SPEC.md`
+- id: ACQ-REL-015
+  priority: P1
+  status: TODO
+  DoD: Add dashboard/operator UI support-ticket submit actions bound to `/api/requests/:id/support-ticket` with deterministic validation and success/error copy.
+  Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
