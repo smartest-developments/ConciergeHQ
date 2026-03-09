@@ -68,12 +68,17 @@ function getProposalCountdownLabel(expiresAtIso: string, nowMs: number): string 
   return `Expires in ${Math.max(diffMinutes, 0)}m`;
 }
 
-function getAuditActionLabel(actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE'): string {
+function getAuditActionLabel(
+  actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE' | 'ACCOUNT_STATUS_CHANGE'
+): string {
   if (actionType === 'PROPOSAL_PUBLISHED') {
     return 'Proposal published';
   }
   if (actionType === 'ROLE_CHANGE') {
     return 'Role changed';
+  }
+  if (actionType === 'ACCOUNT_STATUS_CHANGE') {
+    return 'Account status changed';
   }
 
   return 'Status override';
@@ -586,6 +591,13 @@ export function OperatorRequestDetailPage() {
                   {event.roleChange
                     ? ` - role: ${event.roleChange.fromRole} -> ${event.roleChange.toRole}${
                         event.roleChange.targetUserId ? ` (user #${event.roleChange.targetUserId})` : ''
+                      }`
+                    : ''}
+                  {event.accountStatusChange
+                    ? ` - account: ${event.accountStatusChange.disabled ? 'DISABLED' : 'ENABLED'}${
+                        event.accountStatusChange.targetUserId
+                          ? ` (user #${event.accountStatusChange.targetUserId})`
+                          : ''
                       }`
                     : ''}
                   {event.reason ? ` - ${event.reason}` : ''}

@@ -327,6 +327,20 @@ describe('GET /api/requests list filters', () => {
       ],
       statusEvents: [
         {
+          id: 4,
+          fromStatus: RequestStatus.SOURCING,
+          toStatus: RequestStatus.SOURCING,
+          reason: 'Admin disabled account after suspicious payment dispute',
+          metadata: {
+            operatorRole: 'ADMIN',
+            accountStatusChange: {
+              disabled: true,
+              targetUserId: 19
+            }
+          },
+          occurredAt: new Date('2026-03-05T08:50:00.000Z')
+        },
+        {
           id: 3,
           fromStatus: RequestStatus.SOURCING,
           toStatus: RequestStatus.SOURCING,
@@ -391,6 +405,15 @@ describe('GET /api/requests list filters', () => {
           })
         ]),
         adminAuditTrail: expect.arrayContaining([
+          expect.objectContaining({
+            id: 4,
+            actionType: 'ACCOUNT_STATUS_CHANGE',
+            actorRole: 'ADMIN',
+            accountStatusChange: {
+              disabled: true,
+              targetUserId: 19
+            }
+          }),
           expect.objectContaining({
             id: 3,
             actionType: 'ROLE_CHANGE',

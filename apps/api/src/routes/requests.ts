@@ -68,7 +68,11 @@ const supportTicketSchema = z.object({
 });
 
 const PROPOSAL_ACTION_WINDOW_MS = 2 * 60 * 60 * 1000;
-type AuditActionType = 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE';
+type AuditActionType =
+  | 'PROPOSAL_PUBLISHED'
+  | 'STATUS_OVERRIDE'
+  | 'ROLE_CHANGE'
+  | 'ACCOUNT_STATUS_CHANGE';
 
 function resolveAuditActionType(
   toStatus: RequestStatus,
@@ -84,9 +88,18 @@ function resolveAuditActionType(
       : null;
   const hasRoleChange =
     typeof roleChangeMetadata?.fromRole === 'string' && typeof roleChangeMetadata?.toRole === 'string';
+  const accountStatusMetadata =
+    normalizedMetadata?.accountStatusChange && typeof normalizedMetadata.accountStatusChange === 'object'
+      ? (normalizedMetadata.accountStatusChange as Record<string, unknown>)
+      : null;
+  const hasAccountStatusChange = typeof accountStatusMetadata?.disabled === 'boolean';
 
   if (hasRoleChange) {
     return 'ROLE_CHANGE';
+  }
+
+  if (hasAccountStatusChange) {
+    return 'ACCOUNT_STATUS_CHANGE';
   }
 
   if (toStatus === RequestStatus.PROPOSAL_PUBLISHED || hasProposalId) {
@@ -403,6 +416,20 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
                       : null
                 }
               : null;
+          const accountStatusChangeMetadata =
+            metadata?.accountStatusChange && typeof metadata.accountStatusChange === 'object'
+              ? (metadata.accountStatusChange as Record<string, unknown>)
+              : null;
+          const accountStatusChange =
+            typeof accountStatusChangeMetadata?.disabled === 'boolean'
+              ? {
+                  disabled: accountStatusChangeMetadata.disabled,
+                  targetUserId:
+                    typeof accountStatusChangeMetadata.targetUserId === 'number'
+                      ? accountStatusChangeMetadata.targetUserId
+                      : null
+                }
+              : null;
 
           return {
             id: event.id,
@@ -412,6 +439,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
             actorRole,
             proposalId,
             roleChange,
+            accountStatusChange,
             reason: event.reason,
             occurredAt: event.occurredAt
           };

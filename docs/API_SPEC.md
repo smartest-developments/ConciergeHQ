@@ -197,6 +197,13 @@ Responses:
 - `200` detail payload
 - `404` with `{ "error": "REQUEST_NOT_FOUND" }`
 
+Admin audit trail behavior:
+- `adminAuditTrail` entries are derived from request status events and classify sensitive actions as:
+  - `PROPOSAL_PUBLISHED`
+  - `STATUS_OVERRIDE`
+  - `ROLE_CHANGE` (`roleChange.fromRole`, `roleChange.toRole`, `roleChange.targetUserId`)
+  - `ACCOUNT_STATUS_CHANGE` (`accountStatusChange.disabled`, `accountStatusChange.targetUserId`)
+
 ## POST /api/requests/:id/status
 Operator/admin transition endpoint for explicit manual status moves used by request detail triage actions.
 

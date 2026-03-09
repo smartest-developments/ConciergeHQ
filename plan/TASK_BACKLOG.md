@@ -300,9 +300,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/api.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-005
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Expose and render admin audit trail for sensitive actions (proposal publish, role changes, status overrides).
-  Evidence: `apps/api/src/routes`, `apps/web/src/pages`, `apps/api/prisma/schema.prisma`
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/src/routes/auth.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-005A
   priority: P1
   status: DONE
@@ -310,7 +310,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
 - id: ACQ-ADMIN-005B
   priority: P1
-  status: IN_PROGRESS
+  status: DONE
   DoD: Extend admin audit trail scope to include role-change events with dedicated API/UI views (`ACQ-ADMIN-005B1..B2`).
   Evidence: `apps/api/src/routes`, `apps/api/prisma/schema.prisma`, `apps/web/src/pages`
 - id: ACQ-ADMIN-005B1
@@ -323,6 +323,11 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: DONE
   DoD: Persist role-change status events from admin role-management flows so audit trail coverage is complete without manual metadata seeding.
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/src/routes/requests.ts`, `apps/api/tests/auth-routes.test.ts`, `apps/api/tests/requests-list.test.ts`
+- id: ACQ-ADMIN-005C
+  priority: P1
+  status: DONE
+  DoD: Classify and render account disable/enable events in request-detail admin audit trail via `accountStatusChange` metadata so compliance actions are visible alongside proposal/status/role events.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`, `docs/API_SPEC.md`
 
 ## RELEASE_READINESS
 - id: ACQ-REL-001

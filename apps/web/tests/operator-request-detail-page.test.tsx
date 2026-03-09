@@ -103,6 +103,20 @@ describe('OperatorRequestDetailPage', () => {
       ],
       adminAuditTrail: [
         {
+          id: 6,
+          actionType: 'ACCOUNT_STATUS_CHANGE',
+          fromStatus: 'SOURCING',
+          toStatus: 'SOURCING',
+          actorRole: 'ADMIN',
+          proposalId: null,
+          accountStatusChange: {
+            disabled: true,
+            targetUserId: 19
+          },
+          reason: 'Admin disabled account pending risk review',
+          occurredAt: '2026-03-06T08:07:00.000Z'
+        },
+        {
           id: 5,
           actionType: 'ROLE_CHANGE',
           fromStatus: 'SOURCING',
@@ -148,6 +162,8 @@ describe('OperatorRequestDetailPage', () => {
     expect(screen.getByText(/proposal #9/i)).toBeTruthy();
     expect(screen.getByText(/Role changed/)).toBeTruthy();
     expect(screen.getByText(/role: OPERATOR -> ADMIN \(user #19\)/i)).toBeTruthy();
+    expect(screen.getByText(/Account status changed/)).toBeTruthy();
+    expect(screen.getByText(/account: DISABLED \(user #19\)/i)).toBeTruthy();
     expect(screen.getByText(/Expired|Expires in/)).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Support routing hints' })).toBeTruthy();
     expect(
