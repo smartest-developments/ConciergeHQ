@@ -119,6 +119,13 @@ describe('OperatorRequestDetailPage', () => {
     expect(screen.getByText(/Role changed/)).toBeTruthy();
     expect(screen.getByText(/role: OPERATOR -> ADMIN \(user #19\)/i)).toBeTruthy();
     expect(screen.getByText(/Expired|Expires in/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Support routing hints' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'ops-escalation@acquisition-concierge.example' }).getAttribute('href')
+    ).toBe('mailto:ops-escalation@acquisition-concierge.example');
+    expect(
+      screen.getByRole('link', { name: 'legal-security@acquisition-concierge.example' }).getAttribute('href')
+    ).toBe('mailto:legal-security@acquisition-concierge.example');
   });
 
   it('submits confirmed transition action with reason and refreshes request detail', async () => {

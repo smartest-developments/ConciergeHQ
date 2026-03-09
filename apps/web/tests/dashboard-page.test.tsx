@@ -135,4 +135,29 @@ describe('DashboardPage', () => {
 
     telemetrySpy.mockRestore();
   });
+
+  it('renders customer support severity routing entrypoint', async () => {
+    mockedFetchRequests.mockResolvedValue({ requests: [] });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('heading', { name: 'Support and escalation' }).length).toBeGreaterThan(0);
+    });
+    expect(screen.getAllByText(/SEV-3:/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEV-2:/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEV-1:/).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole('link', { name: 'support@acquisition-concierge.example' })[0]?.getAttribute('href')
+    ).toBe('mailto:support@acquisition-concierge.example');
+    expect(
+      screen
+        .getAllByRole('link', { name: 'legal-security@acquisition-concierge.example' })[0]
+        ?.getAttribute('href')
+    ).toBe('mailto:legal-security@acquisition-concierge.example');
+  });
 });

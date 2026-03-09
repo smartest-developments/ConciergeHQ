@@ -692,3 +692,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add customer-visible support entrypoint in dashboard and operator queue detail with deterministic severity routing hints.
   Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
+
+## RUN_UPDATE_2026-03-09T01:36:09+0100
+- id: ACQ-REL-013
+  priority: P1
+  status: DONE
+  DoD: Add customer-visible support entrypoint in dashboard and operator queue detail with deterministic severity routing hints.
+  Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-REL-014
+  priority: P1
+  status: TODO
+  DoD: Add backend support-ticket intake endpoint with severity validation and immutable audit event for operator workflows.
+  Evidence: `apps/api/src/routes`, `apps/api/tests`, `docs/API_SPEC.md`

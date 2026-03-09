@@ -157,6 +157,26 @@ export function DashboardPage() {
           merchant site; Acquisition Concierge is not the seller and does not provide after-sales support.
         </p>
       ) : null}
+      <section className="card" aria-labelledby="support-routing-title">
+        <h3 id="support-routing-title">Support and escalation</h3>
+        <p>
+          Contact <a href="mailto:support@acquisition-concierge.example">support@acquisition-concierge.example</a> for
+          request updates or report disputes.
+        </p>
+        <ul>
+          <li>
+            <strong>SEV-3:</strong> non-blocking question or copy issue. Response target: 24h.
+          </li>
+          <li>
+            <strong>SEV-2:</strong> request flow blocked (payment, missing timeline update). Response target: 4h.
+          </li>
+          <li>
+            <strong>SEV-1:</strong> legal/security or wrong-order risk. Escalate to{' '}
+            <a href="mailto:legal-security@acquisition-concierge.example">legal-security@acquisition-concierge.example</a>{' '}
+            immediately.
+          </li>
+        </ul>
+      </section>
     </section>
   );
 }

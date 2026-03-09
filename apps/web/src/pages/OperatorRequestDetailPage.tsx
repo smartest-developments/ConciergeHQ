@@ -253,6 +253,29 @@ export function OperatorRequestDetailPage() {
       <p>
         <Link to="/operator/queue">Back to queue</Link>
       </p>
+      <section className="card" aria-labelledby="operator-support-routing-title">
+        <h3 id="operator-support-routing-title">Support routing hints</h3>
+        <ul>
+          <li>
+            <strong>SEV-3:</strong> normal request question. Route to{' '}
+            <a href="mailto:support@acquisition-concierge.example">support@acquisition-concierge.example</a>.
+          </li>
+          <li>
+            <strong>SEV-2:</strong> request blocked by payment/report state mismatch. Route to{' '}
+            <a href="mailto:ops-escalation@acquisition-concierge.example">
+              ops-escalation@acquisition-concierge.example
+            </a>
+            .
+          </li>
+          <li>
+            <strong>SEV-1:</strong> legal/security exposure or incorrect charge risk. Route to{' '}
+            <a href="mailto:legal-security@acquisition-concierge.example">
+              legal-security@acquisition-concierge.example
+            </a>
+            .
+          </li>
+        </ul>
+      </section>
 
       {error ? <p className="error">{error}</p> : null}
 
