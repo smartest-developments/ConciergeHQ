@@ -36,5 +36,8 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe('/legal#legal-privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' }).getAttribute('href')).toBe('/legal#legal-terms');
     expect(screen.getByText(/operator@example\.com/)).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Legal' })).toBeTruthy();
+    expect(screen.getByRole('main').getAttribute('id')).toBe('main-content');
   });
 });

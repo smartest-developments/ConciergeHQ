@@ -728,3 +728,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Complete keyboard-only and contrast accessibility pass with explicit evidence capture in release readiness docs.
   Evidence: `apps/web/tests`, `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`
+
+## RUN_UPDATE_2026-03-09T04:20:00+0100
+- id: ACQ-REL-008C
+  priority: P1
+  status: DONE
+  DoD: Complete keyboard-only and contrast accessibility pass with explicit evidence capture in release readiness docs.
+  Evidence: `docs/RELEASE_RUNBOOK.md`, `apps/web/tests/app-shell.test.tsx`, `apps/web/package.json`, `plan/PROGRESS_LOG.md`
+- id: ACQ-REL-011B
+  priority: P1
+  status: TODO
+  DoD: Run staging UAT and attach pass/fail evidence + release recommendation.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
