@@ -1,6 +1,6 @@
 # TASK_BACKLOG
 
-Last reviewed: **2026-03-08**
+Last reviewed: **2026-03-09**
 
 Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discovery and enforce `P0 <= 7` items.
 
@@ -285,8 +285,18 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-ADMIN-004B
   priority: P2
-  status: TODO
+  status: DONE
   DoD: Add admin role-management UI with guarded role selection, confirmation UX, and request-context audit linkage controls.
+  Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/api/src/routes/requests.ts`, `docs/API_SPEC.md`
+- id: ACQ-ADMIN-004C
+  priority: P2
+  status: TODO
+  DoD: Add admin account disable/enable backend mutation with immutable audit events and role-change guardrails.
+  Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
+- id: ACQ-ADMIN-004D
+  priority: P2
+  status: TODO
+  DoD: Add admin account disable/enable UI controls with confirmation copy and request-context audit linkage metadata.
   Evidence: `apps/web/src/pages`, `apps/web/tests`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-005
   priority: P1

@@ -343,6 +343,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
     return {
       request: {
         id: request.id,
+        userId: request.user.id,
         userEmail: request.user.email,
         budgetChf: Number(request.budgetChf),
         sourcingFeeChf: Number(request.sourcingFeeChf),

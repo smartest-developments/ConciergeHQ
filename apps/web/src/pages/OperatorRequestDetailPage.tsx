@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../api';
+import { assignUserRole, fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../api';
+import { readAuthSession } from '../auth';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
 type TransitionStatus = 'SOURCING' | 'COMPLETED' | 'CANCELED';
@@ -91,6 +92,13 @@ export function OperatorRequestDetailPage() {
   const [supportError, setSupportError] = useState<string | null>(null);
   const [supportSuccess, setSupportSuccess] = useState<string | null>(null);
   const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
+  const [targetUserId, setTargetUserId] = useState('');
+  const [targetRole, setTargetRole] = useState<'CUSTOMER' | 'OPERATOR' | 'ADMIN'>('CUSTOMER');
+  const [roleReason, setRoleReason] = useState('');
+  const [isAssigningRole, setIsAssigningRole] = useState(false);
+  const [roleAssignmentError, setRoleAssignmentError] = useState<string | null>(null);
+  const [roleAssignmentSuccess, setRoleAssignmentSuccess] = useState<string | null>(null);
+  const canAssignRoles = useMemo(() => readAuthSession()?.role === 'ADMIN', []);
 
   const loadRequestDetail = async () => {
     const response = await fetchRequestDetail(requestId);
@@ -209,6 +217,16 @@ export function OperatorRequestDetailPage() {
   const latestProposal = payload?.proposals[0] ?? null;
   const adminAuditTrail = payload?.adminAuditTrail ?? [];
 
+  useEffect(() => {
+    if (!payload) {
+      return;
+    }
+
+    if (targetUserId.trim().length === 0) {
+      setTargetUserId(String(payload.request.userId));
+    }
+  }, [payload, targetUserId]);
+
   const handlePublishProposal = async () => {
     if (!payload || !canPublishProposal || isPublishingProposal) {
       return;
@@ -287,6 +305,54 @@ export function OperatorRequestDetailPage() {
       }
     } finally {
       setIsSubmittingSupport(false);
+    }
+  };
+
+  const handleRoleAssignment = async () => {
+    if (!payload || !canAssignRoles || isAssigningRole) {
+      return;
+    }
+
+    const normalizedUserId = Number.parseInt(targetUserId.trim(), 10);
+    if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+      setRoleAssignmentError('Target user id must be a positive integer.');
+      setRoleAssignmentSuccess(null);
+      return;
+    }
+
+    setIsAssigningRole(true);
+    setRoleAssignmentError(null);
+    setRoleAssignmentSuccess(null);
+
+    try {
+      const response = await assignUserRole(normalizedUserId, {
+        role: targetRole,
+        requestId: payload.request.id,
+        ...(roleReason.trim() ? { reason: roleReason.trim() } : {})
+      });
+      setRoleAssignmentSuccess(
+        response.roleChanged
+          ? `Updated ${response.user.email} to role ${response.user.role}.`
+          : `${response.user.email} is already ${response.user.role}.`
+      );
+      setRoleReason('');
+      await loadRequestDetail();
+    } catch (caughtError) {
+      if (caughtError instanceof Error && caughtError.message === 'OPERATOR_FORBIDDEN') {
+        setRoleAssignmentError('Only admins can assign roles.');
+      } else if (caughtError instanceof Error && caughtError.message === 'USER_NOT_FOUND') {
+        setRoleAssignmentError('Target user was not found.');
+      } else if (caughtError instanceof Error && caughtError.message === 'REQUEST_NOT_FOUND') {
+        setRoleAssignmentError('Request context for role audit was not found.');
+      } else if (caughtError instanceof Error && caughtError.message === 'AUTH_REQUIRED') {
+        setRoleAssignmentError('Session expired. Sign in again and retry role assignment.');
+      } else if (caughtError instanceof Error && caughtError.message === 'VALIDATION_ERROR') {
+        setRoleAssignmentError('Role assignment payload is invalid.');
+      } else {
+        setRoleAssignmentError('Could not assign user role.');
+      }
+    } finally {
+      setIsAssigningRole(false);
     }
   };
 
@@ -465,6 +531,48 @@ export function OperatorRequestDetailPage() {
               {adminAuditTrail.length === 0 ? <li>No admin audit events logged yet.</li> : null}
             </ul>
           </article>
+
+          {canAssignRoles ? (
+            <article className="card">
+              <h3>Admin Role Management</h3>
+              <p>Assign user role changes and persist role-change audit evidence on this request.</p>
+              <label htmlFor="target-user-id">Target user id</label>
+              <input
+                id="target-user-id"
+                value={targetUserId}
+                onChange={(event) => setTargetUserId(event.target.value)}
+                inputMode="numeric"
+                style={{ display: 'block', width: '100%', marginTop: 4, marginBottom: 8 }}
+                disabled={isAssigningRole}
+              />
+              <label htmlFor="target-user-role">Target role</label>
+              <select
+                id="target-user-role"
+                value={targetRole}
+                onChange={(event) => setTargetRole(event.target.value as 'CUSTOMER' | 'OPERATOR' | 'ADMIN')}
+                style={{ display: 'block', marginTop: 4, marginBottom: 8 }}
+                disabled={isAssigningRole}
+              >
+                <option value="CUSTOMER">CUSTOMER</option>
+                <option value="OPERATOR">OPERATOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+              <label htmlFor="role-assignment-reason">Reason (optional)</label>
+              <textarea
+                id="role-assignment-reason"
+                value={roleReason}
+                onChange={(event) => setRoleReason(event.target.value)}
+                rows={2}
+                style={{ display: 'block', width: '100%', marginTop: 4, marginBottom: 8 }}
+                disabled={isAssigningRole}
+              />
+              <button type="button" onClick={() => void handleRoleAssignment()} disabled={isAssigningRole}>
+                {isAssigningRole ? 'Assigning role...' : 'Assign role'}
+              </button>
+              {roleAssignmentError ? <p className="error">{roleAssignmentError}</p> : null}
+              {roleAssignmentSuccess ? <p>{roleAssignmentSuccess}</p> : null}
+            </article>
+          ) : null}
 
           <article className="card">
             <h3>Proposal History</h3>

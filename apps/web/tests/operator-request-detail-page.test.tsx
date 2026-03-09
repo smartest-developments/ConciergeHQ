@@ -2,19 +2,21 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperatorRequestDetailPage } from '../src/pages/OperatorRequestDetailPage';
-import { fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../src/api';
+import { assignUserRole, fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../src/api';
 
 vi.mock('../src/api', () => ({
   fetchRequestDetail: vi.fn(),
   publishProposal: vi.fn(),
   transitionRequestStatus: vi.fn(),
-  submitSupportTicket: vi.fn()
+  submitSupportTicket: vi.fn(),
+  assignUserRole: vi.fn()
 }));
 
 const mockedFetchRequestDetail = vi.mocked(fetchRequestDetail);
 const mockedPublishProposal = vi.mocked(publishProposal);
 const mockedTransitionRequestStatus = vi.mocked(transitionRequestStatus);
 const mockedSubmitSupportTicket = vi.mocked(submitSupportTicket);
+const mockedAssignUserRole = vi.mocked(assignUserRole);
 
 function renderPage(path = '/operator/requests/55') {
   render(
@@ -28,11 +30,25 @@ function renderPage(path = '/operator/requests/55') {
 
 describe('OperatorRequestDetailPage', () => {
   beforeEach(() => {
+    const store = new Map<string, string>();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          store.set(key, value);
+        },
+        removeItem: (key: string) => {
+          store.delete(key);
+        }
+      }
+    });
     cleanup();
     mockedFetchRequestDetail.mockReset();
     mockedPublishProposal.mockReset();
     mockedTransitionRequestStatus.mockReset();
     mockedSubmitSupportTicket.mockReset();
+    mockedAssignUserRole.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
@@ -40,6 +56,7 @@ describe('OperatorRequestDetailPage', () => {
     mockedFetchRequestDetail.mockResolvedValue({
       request: {
         id: 55,
+        userId: 19,
         userEmail: 'detail@example.com',
         budgetChf: 1800,
         sourcingFeeChf: 180,
@@ -136,6 +153,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -155,6 +173,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -220,6 +239,7 @@ describe('OperatorRequestDetailPage', () => {
     mockedFetchRequestDetail.mockResolvedValue({
       request: {
         id: 55,
+        userId: 19,
         userEmail: 'detail@example.com',
         budgetChf: 1800,
         sourcingFeeChf: 180,
@@ -271,6 +291,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -290,6 +311,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -360,6 +382,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -379,6 +402,7 @@ describe('OperatorRequestDetailPage', () => {
       .mockResolvedValueOnce({
         request: {
           id: 55,
+          userId: 19,
           userEmail: 'detail@example.com',
           budgetChf: 1800,
           sourcingFeeChf: 180,
@@ -416,5 +440,56 @@ describe('OperatorRequestDetailPage', () => {
     expect(
       screen.getByText('Proposal cannot be published because this request is no longer fee-paid/sourcing.')
     ).toBeTruthy();
+  });
+
+  it('allows admin to assign role from request detail context', async () => {
+    window.localStorage.setItem('acq_auth_session', JSON.stringify({ email: 'admin@example.com', role: 'ADMIN' }));
+    mockedFetchRequestDetail.mockResolvedValue({
+      request: {
+        id: 55,
+        userId: 19,
+        userEmail: 'detail@example.com',
+        budgetChf: 1800,
+        sourcingFeeChf: 180,
+        specs: 'Need a low-mileage hatchback with service history.',
+        category: 'ELECTRONICS',
+        country: 'CH',
+        condition: 'USED',
+        urgency: 'FAST',
+        status: 'IN_REVIEW',
+        feePaidAt: '2026-03-06T08:00:00.000Z',
+        createdAt: '2026-03-05T08:00:00.000Z',
+        updatedAt: '2026-03-06T08:05:00.000Z'
+      },
+      proposals: [],
+      statusTimeline: [],
+      adminAuditTrail: []
+    });
+    mockedAssignUserRole.mockResolvedValue({
+      user: { id: 19, email: 'detail@example.com', role: 'OPERATOR' },
+      roleChanged: true,
+      auditEventRecorded: true
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Admin Role Management' })).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Target role'), { target: { value: 'OPERATOR' } });
+    fireEvent.change(screen.getByLabelText('Reason (optional)'), {
+      target: { value: 'Escalating user for request handoff.' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
+
+    await waitFor(() => {
+      expect(mockedAssignUserRole).toHaveBeenCalledWith(19, {
+        role: 'OPERATOR',
+        requestId: 55,
+        reason: 'Escalating user for request handoff.'
+      });
+    });
+    expect(screen.getByText('Updated detail@example.com to role OPERATOR.')).toBeTruthy();
   });
 });

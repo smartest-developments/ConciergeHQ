@@ -155,6 +155,7 @@ Example response:
 {
   "request": {
     "id": 42,
+    "userId": 77,
     "userEmail": "buyer@example.com",
     "budgetChf": 1800,
     "sourcingFeeChf": 180,

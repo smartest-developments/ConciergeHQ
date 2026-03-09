@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+type UserRole = 'CUSTOMER' | 'OPERATOR' | 'ADMIN';
 
 export type CreateRequestInput = {
   userEmail: string;
@@ -127,6 +128,7 @@ export async function fetchRequestDetail(requestId: number) {
   return response.json() as Promise<{
     request: {
       id: number;
+      userId: number;
       userEmail: string;
       budgetChf: number;
       sourcingFeeChf: number;
@@ -172,6 +174,28 @@ export async function fetchRequestDetail(requestId: number) {
       reason: string | null;
       occurredAt: string;
     }>;
+  }>;
+}
+
+export async function assignUserRole(
+  userId: number,
+  payload: { role: UserRole; requestId?: number; reason?: string }
+) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/role`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to assign user role');
+  }
+
+  return response.json() as Promise<{
+    user: { id: number; email: string; role: UserRole };
+    roleChanged: boolean;
+    auditEventRecorded: boolean;
   }>;
 }
 
