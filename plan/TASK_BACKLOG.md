@@ -295,9 +295,9 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-ADMIN-004D
   priority: P2
-  status: TODO
+  status: DONE
   DoD: Add admin account disable/enable UI controls with confirmation copy and request-context audit linkage metadata.
-  Evidence: `apps/web/src/pages`, `apps/web/tests`, `docs/API_SPEC.md`
+  Evidence: `apps/web/src/api.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-005
   priority: P1
   status: IN_PROGRESS

@@ -2,14 +2,22 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperatorRequestDetailPage } from '../src/pages/OperatorRequestDetailPage';
-import { assignUserRole, fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../src/api';
+import {
+  assignUserRole,
+  fetchRequestDetail,
+  publishProposal,
+  submitSupportTicket,
+  transitionRequestStatus,
+  updateUserAccountStatus
+} from '../src/api';
 
 vi.mock('../src/api', () => ({
   fetchRequestDetail: vi.fn(),
   publishProposal: vi.fn(),
   transitionRequestStatus: vi.fn(),
   submitSupportTicket: vi.fn(),
-  assignUserRole: vi.fn()
+  assignUserRole: vi.fn(),
+  updateUserAccountStatus: vi.fn()
 }));
 
 const mockedFetchRequestDetail = vi.mocked(fetchRequestDetail);
@@ -17,6 +25,7 @@ const mockedPublishProposal = vi.mocked(publishProposal);
 const mockedTransitionRequestStatus = vi.mocked(transitionRequestStatus);
 const mockedSubmitSupportTicket = vi.mocked(submitSupportTicket);
 const mockedAssignUserRole = vi.mocked(assignUserRole);
+const mockedUpdateUserAccountStatus = vi.mocked(updateUserAccountStatus);
 
 function renderPage(path = '/operator/requests/55') {
   render(
@@ -49,6 +58,7 @@ describe('OperatorRequestDetailPage', () => {
     mockedTransitionRequestStatus.mockReset();
     mockedSubmitSupportTicket.mockReset();
     mockedAssignUserRole.mockReset();
+    mockedUpdateUserAccountStatus.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
@@ -478,7 +488,7 @@ describe('OperatorRequestDetailPage', () => {
     });
 
     fireEvent.change(screen.getByLabelText('Target role'), { target: { value: 'OPERATOR' } });
-    fireEvent.change(screen.getByLabelText('Reason (optional)'), {
+    fireEvent.change(screen.getAllByLabelText('Reason (optional)')[0]!, {
       target: { value: 'Escalating user for request handoff.' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Assign role' }));
@@ -491,5 +501,57 @@ describe('OperatorRequestDetailPage', () => {
       });
     });
     expect(screen.getByText('Updated detail@example.com to role OPERATOR.')).toBeTruthy();
+  });
+
+  it('allows admin to disable account from request detail context', async () => {
+    window.localStorage.setItem('acq_auth_session', JSON.stringify({ email: 'admin@example.com', role: 'ADMIN' }));
+    mockedFetchRequestDetail.mockResolvedValue({
+      request: {
+        id: 55,
+        userId: 19,
+        userEmail: 'detail@example.com',
+        budgetChf: 1800,
+        sourcingFeeChf: 180,
+        specs: 'Need a low-mileage hatchback with service history.',
+        category: 'ELECTRONICS',
+        country: 'CH',
+        condition: 'USED',
+        urgency: 'FAST',
+        status: 'IN_REVIEW',
+        feePaidAt: '2026-03-06T08:00:00.000Z',
+        createdAt: '2026-03-05T08:00:00.000Z',
+        updatedAt: '2026-03-06T08:05:00.000Z'
+      },
+      proposals: [],
+      statusTimeline: [],
+      adminAuditTrail: []
+    });
+    mockedUpdateUserAccountStatus.mockResolvedValue({
+      user: { id: 19, email: 'detail@example.com', role: 'CUSTOMER' },
+      accountDisabled: true,
+      accountStatusChanged: true,
+      sessionsRevoked: true,
+      auditEventRecorded: true
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Admin Account Status' })).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getAllByLabelText('Reason (optional)')[1]!, {
+      target: { value: 'Compliance hold pending verification.' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Disable account' }));
+
+    await waitFor(() => {
+      expect(mockedUpdateUserAccountStatus).toHaveBeenCalledWith(19, {
+        disabled: true,
+        requestId: 55,
+        reason: 'Compliance hold pending verification.'
+      });
+    });
+    expect(screen.getByText('detail@example.com account disabled.')).toBeTruthy();
   });
 });

@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { assignUserRole, fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../api';
+import {
+  assignUserRole,
+  fetchRequestDetail,
+  publishProposal,
+  submitSupportTicket,
+  transitionRequestStatus,
+  updateUserAccountStatus
+} from '../api';
 import { readAuthSession } from '../auth';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
@@ -98,6 +105,10 @@ export function OperatorRequestDetailPage() {
   const [isAssigningRole, setIsAssigningRole] = useState(false);
   const [roleAssignmentError, setRoleAssignmentError] = useState<string | null>(null);
   const [roleAssignmentSuccess, setRoleAssignmentSuccess] = useState<string | null>(null);
+  const [accountStatusReason, setAccountStatusReason] = useState('');
+  const [isUpdatingAccountStatus, setIsUpdatingAccountStatus] = useState(false);
+  const [accountStatusError, setAccountStatusError] = useState<string | null>(null);
+  const [accountStatusSuccess, setAccountStatusSuccess] = useState<string | null>(null);
   const canAssignRoles = useMemo(() => readAuthSession()?.role === 'ADMIN', []);
 
   const loadRequestDetail = async () => {
@@ -356,6 +367,58 @@ export function OperatorRequestDetailPage() {
     }
   };
 
+  const handleAccountStatusUpdate = async (disabled: boolean) => {
+    if (!payload || !canAssignRoles || isUpdatingAccountStatus) {
+      return;
+    }
+
+    const confirmationMessage = disabled
+      ? `Disable ${payload.request.userEmail}'s account and revoke active sessions?`
+      : `Enable ${payload.request.userEmail}'s account?`;
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    setIsUpdatingAccountStatus(true);
+    setAccountStatusError(null);
+    setAccountStatusSuccess(null);
+
+    try {
+      const response = await updateUserAccountStatus(payload.request.userId, {
+        disabled,
+        requestId: payload.request.id,
+        ...(accountStatusReason.trim() ? { reason: accountStatusReason.trim() } : {})
+      });
+      setAccountStatusSuccess(
+        response.accountStatusChanged
+          ? `${response.user.email} account ${response.accountDisabled ? 'disabled' : 'enabled'}.`
+          : `${response.user.email} account already ${response.accountDisabled ? 'disabled' : 'enabled'}.`
+      );
+      setAccountStatusReason('');
+      await loadRequestDetail();
+    } catch (caughtError) {
+      if (caughtError instanceof Error && caughtError.message === 'OPERATOR_FORBIDDEN') {
+        setAccountStatusError('Only admins can manage account status.');
+      } else if (caughtError instanceof Error && caughtError.message === 'USER_NOT_FOUND') {
+        setAccountStatusError('Target user was not found.');
+      } else if (caughtError instanceof Error && caughtError.message === 'USER_CREDENTIAL_NOT_FOUND') {
+        setAccountStatusError('Target user has no credential record.');
+      } else if (caughtError instanceof Error && caughtError.message === 'REQUEST_NOT_FOUND') {
+        setAccountStatusError('Request context for account-status audit was not found.');
+      } else if (caughtError instanceof Error && caughtError.message === 'CANNOT_DISABLE_SELF') {
+        setAccountStatusError('Admin accounts cannot disable their own access.');
+      } else if (caughtError instanceof Error && caughtError.message === 'AUTH_REQUIRED') {
+        setAccountStatusError('Session expired. Sign in again and retry account-status update.');
+      } else if (caughtError instanceof Error && caughtError.message === 'VALIDATION_ERROR') {
+        setAccountStatusError('Account-status payload is invalid.');
+      } else {
+        setAccountStatusError('Could not update account status.');
+      }
+    } finally {
+      setIsUpdatingAccountStatus(false);
+    }
+  };
+
   return (
     <section>
       <h2>Operator Request Detail</h2>
@@ -571,6 +634,43 @@ export function OperatorRequestDetailPage() {
               </button>
               {roleAssignmentError ? <p className="error">{roleAssignmentError}</p> : null}
               {roleAssignmentSuccess ? <p>{roleAssignmentSuccess}</p> : null}
+            </article>
+          ) : null}
+
+          {canAssignRoles ? (
+            <article className="card">
+              <h3>Admin Account Status</h3>
+              <p>Disable/enable the request owner account and persist request-linked audit metadata.</p>
+              <p>
+                <strong>Target user:</strong> #{payload.request.userId} ({payload.request.userEmail})
+              </p>
+              <label htmlFor="account-status-reason">Reason (optional)</label>
+              <textarea
+                id="account-status-reason"
+                value={accountStatusReason}
+                onChange={(event) => setAccountStatusReason(event.target.value)}
+                rows={2}
+                style={{ display: 'block', width: '100%', marginTop: 4, marginBottom: 8 }}
+                disabled={isUpdatingAccountStatus}
+              />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => void handleAccountStatusUpdate(true)}
+                  disabled={isUpdatingAccountStatus}
+                >
+                  {isUpdatingAccountStatus ? 'Updating account...' : 'Disable account'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleAccountStatusUpdate(false)}
+                  disabled={isUpdatingAccountStatus}
+                >
+                  {isUpdatingAccountStatus ? 'Updating account...' : 'Enable account'}
+                </button>
+              </div>
+              {accountStatusError ? <p className="error">{accountStatusError}</p> : null}
+              {accountStatusSuccess ? <p>{accountStatusSuccess}</p> : null}
             </article>
           ) : null}
 

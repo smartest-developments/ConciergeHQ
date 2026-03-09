@@ -199,6 +199,30 @@ export async function assignUserRole(
   }>;
 }
 
+export async function updateUserAccountStatus(
+  userId: number,
+  payload: { disabled: boolean; requestId?: number; reason?: string }
+) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/account-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to update user account status');
+  }
+
+  return response.json() as Promise<{
+    user: { id: number; email: string; role: UserRole };
+    accountDisabled: boolean;
+    accountStatusChanged: boolean;
+    sessionsRevoked: boolean;
+    auditEventRecorded: boolean;
+  }>;
+}
+
 export async function transitionRequestStatus(
   requestId: number,
   payload: { toStatus: 'SOURCING' | 'COMPLETED' | 'CANCELED'; reason?: string }

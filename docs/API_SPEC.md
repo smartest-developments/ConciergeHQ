@@ -479,6 +479,7 @@ Behavior:
 - Disabling sets a long-lived credential lock and revokes active sessions for target user.
 - Enabling clears the credential lock and resets failed-attempt counters.
 - When `requestId` is provided, server appends request status event metadata (`accountStatusChange.disabled`, `accountStatusChange.targetUserId`) for admin audit-trail parity.
+- Admin request-detail UI (`/operator/requests/:requestId`) consumes this mutation with explicit disable/enable confirmations and optional request-linked reason metadata.
 
 ## POST /api/auth/forgot-password
 Request password recovery for an account.
