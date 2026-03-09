@@ -2,17 +2,19 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperatorRequestDetailPage } from '../src/pages/OperatorRequestDetailPage';
-import { fetchRequestDetail, publishProposal, transitionRequestStatus } from '../src/api';
+import { fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../src/api';
 
 vi.mock('../src/api', () => ({
   fetchRequestDetail: vi.fn(),
   publishProposal: vi.fn(),
-  transitionRequestStatus: vi.fn()
+  transitionRequestStatus: vi.fn(),
+  submitSupportTicket: vi.fn()
 }));
 
 const mockedFetchRequestDetail = vi.mocked(fetchRequestDetail);
 const mockedPublishProposal = vi.mocked(publishProposal);
 const mockedTransitionRequestStatus = vi.mocked(transitionRequestStatus);
+const mockedSubmitSupportTicket = vi.mocked(submitSupportTicket);
 
 function renderPage(path = '/operator/requests/55') {
   render(
@@ -30,6 +32,7 @@ describe('OperatorRequestDetailPage', () => {
     mockedFetchRequestDetail.mockReset();
     mockedPublishProposal.mockReset();
     mockedTransitionRequestStatus.mockReset();
+    mockedSubmitSupportTicket.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
@@ -211,6 +214,56 @@ describe('OperatorRequestDetailPage', () => {
 
     expect(screen.getByText('Invalid request id.')).toBeTruthy();
     expect(mockedFetchRequestDetail).not.toHaveBeenCalled();
+  });
+
+  it('submits support ticket from operator detail and renders success copy', async () => {
+    mockedFetchRequestDetail.mockResolvedValue({
+      request: {
+        id: 55,
+        userEmail: 'detail@example.com',
+        budgetChf: 1800,
+        sourcingFeeChf: 180,
+        specs: 'Need a low-mileage hatchback with service history.',
+        category: 'ELECTRONICS',
+        country: 'CH',
+        condition: 'USED',
+        urgency: 'FAST',
+        status: 'IN_REVIEW',
+        feePaidAt: '2026-03-06T08:00:00.000Z',
+        createdAt: '2026-03-05T08:00:00.000Z',
+        updatedAt: '2026-03-06T08:05:00.000Z'
+      },
+      proposals: [],
+      statusTimeline: []
+    });
+    mockedSubmitSupportTicket.mockResolvedValue({
+      requestId: 55,
+      status: 'IN_REVIEW',
+      severity: 'SEV-2',
+      source: 'OPERATOR_DETAIL',
+      submittedAt: '2026-03-06T08:15:00.000Z'
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Request #55')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Severity'), { target: { value: 'SEV-2' } });
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Payment status and report delivery state are inconsistent in detail view.' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit support ticket' }));
+
+    await waitFor(() => {
+      expect(mockedSubmitSupportTicket).toHaveBeenCalledWith(55, {
+        severity: 'SEV-2',
+        source: 'OPERATOR_DETAIL',
+        message: 'Payment status and report delivery state are inconsistent in detail view.'
+      });
+    });
+    expect(screen.getByText('Support ticket submitted for request #55 (SEV-2).')).toBeTruthy();
   });
 
   it('publishes a proposal and refreshes detail when request is sourcing', async () => {

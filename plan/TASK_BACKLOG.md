@@ -716,3 +716,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Add dashboard/operator UI support-ticket submit actions bound to `/api/requests/:id/support-ticket` with deterministic validation and success/error copy.
   Evidence: `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests`
+
+## RUN_UPDATE_2026-03-09T03:44:53+0100
+- id: ACQ-REL-015
+  priority: P1
+  status: DONE
+  DoD: Add dashboard/operator UI support-ticket submit actions bound to `/api/requests/:id/support-ticket` with deterministic validation and success/error copy.
+  Evidence: `apps/web/src/api.ts`, `apps/web/src/pages/DashboardPage.tsx`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/dashboard-page.test.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`
+- id: ACQ-REL-008C
+  priority: P1
+  status: TODO
+  DoD: Complete keyboard-only and contrast accessibility pass with explicit evidence capture in release readiness docs.
+  Evidence: `apps/web/tests`, `docs/RELEASE_RUNBOOK.md`, `plan/PROGRESS_LOG.md`

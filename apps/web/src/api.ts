@@ -222,6 +222,33 @@ export async function publishProposal(
   }>;
 }
 
+export type SupportTicketInput = {
+  severity: 'SEV-1' | 'SEV-2' | 'SEV-3';
+  source: string;
+  message: string;
+};
+
+export async function submitSupportTicket(requestId: number, payload: SupportTicketInput) {
+  const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/support-ticket`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    throw new Error(errorPayload.error ?? 'Failed to submit support ticket');
+  }
+
+  return response.json() as Promise<{
+    requestId: number;
+    status: string;
+    severity: 'SEV-1' | 'SEV-2' | 'SEV-3';
+    source: string;
+    submittedAt: string;
+  }>;
+}
+
 export async function requestPasswordReset(email: string) {
   const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
     method: 'POST',

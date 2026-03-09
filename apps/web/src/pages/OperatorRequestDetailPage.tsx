@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { fetchRequestDetail, publishProposal, transitionRequestStatus } from '../api';
+import { fetchRequestDetail, publishProposal, submitSupportTicket, transitionRequestStatus } from '../api';
 
 type RequestDetailPayload = Awaited<ReturnType<typeof fetchRequestDetail>>;
 type TransitionStatus = 'SOURCING' | 'COMPLETED' | 'CANCELED';
@@ -86,6 +86,11 @@ export function OperatorRequestDetailPage() {
   const [proposalSummary, setProposalSummary] = useState('');
   const [isPublishingProposal, setIsPublishingProposal] = useState(false);
   const [proposalCountdownNow, setProposalCountdownNow] = useState(() => Date.now());
+  const [supportSeverity, setSupportSeverity] = useState<'SEV-1' | 'SEV-2' | 'SEV-3'>('SEV-3');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportError, setSupportError] = useState<string | null>(null);
+  const [supportSuccess, setSupportSuccess] = useState<string | null>(null);
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
 
   const loadRequestDetail = async () => {
     const response = await fetchRequestDetail(requestId);
@@ -246,6 +251,45 @@ export function OperatorRequestDetailPage() {
     }
   };
 
+  const handleSupportSubmit = async () => {
+    if (!payload || isSubmittingSupport) {
+      return;
+    }
+
+    const normalizedMessage = supportMessage.trim();
+    setSupportError(null);
+    setSupportSuccess(null);
+
+    if (normalizedMessage.length < 10 || normalizedMessage.length > 1000) {
+      setSupportError('Support message must be between 10 and 1000 characters.');
+      return;
+    }
+
+    setIsSubmittingSupport(true);
+
+    try {
+      await submitSupportTicket(payload.request.id, {
+        severity: supportSeverity,
+        source: 'OPERATOR_DETAIL',
+        message: normalizedMessage
+      });
+      setSupportSuccess(`Support ticket submitted for request #${payload.request.id} (${supportSeverity}).`);
+      setSupportMessage('');
+    } catch (caughtError) {
+      if (caughtError instanceof Error && caughtError.message === 'AUTH_REQUIRED') {
+        setSupportError('Session expired. Sign in again and retry support ticket submission.');
+      } else if (caughtError instanceof Error && caughtError.message === 'REQUEST_FORBIDDEN') {
+        setSupportError('You are not authorized to submit support tickets for this request.');
+      } else if (caughtError instanceof Error && caughtError.message === 'VALIDATION_ERROR') {
+        setSupportError('Support ticket validation failed. Check severity and message details.');
+      } else {
+        setSupportError('Could not submit support ticket.');
+      }
+    } finally {
+      setIsSubmittingSupport(false);
+    }
+  };
+
   return (
     <section>
       <h2>Operator Request Detail</h2>
@@ -275,6 +319,33 @@ export function OperatorRequestDetailPage() {
             .
           </li>
         </ul>
+        <div style={{ marginTop: 12 }}>
+          <h4>Submit support ticket</h4>
+          <label htmlFor="support-ticket-severity">Severity</label>
+          <select
+            id="support-ticket-severity"
+            value={supportSeverity}
+            onChange={(event) => setSupportSeverity(event.target.value as 'SEV-1' | 'SEV-2' | 'SEV-3')}
+            style={{ display: 'block', marginTop: 4, marginBottom: 8 }}
+          >
+            <option value="SEV-3">SEV-3</option>
+            <option value="SEV-2">SEV-2</option>
+            <option value="SEV-1">SEV-1</option>
+          </select>
+          <label htmlFor="support-ticket-message">Message</label>
+          <textarea
+            id="support-ticket-message"
+            value={supportMessage}
+            onChange={(event) => setSupportMessage(event.target.value)}
+            rows={3}
+            style={{ display: 'block', width: '100%', marginTop: 4, marginBottom: 8 }}
+          />
+          <button type="button" onClick={() => void handleSupportSubmit()} disabled={isSubmittingSupport}>
+            {isSubmittingSupport ? 'Submitting support ticket...' : 'Submit support ticket'}
+          </button>
+          {supportError ? <p className="error">{supportError}</p> : null}
+          {supportSuccess ? <p>{supportSuccess}</p> : null}
+        </div>
       </section>
 
       {error ? <p className="error">{error}</p> : null}

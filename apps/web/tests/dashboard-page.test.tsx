@@ -1,14 +1,16 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from '../src/pages/DashboardPage';
-import { fetchRequests } from '../src/api';
+import { fetchRequests, submitSupportTicket } from '../src/api';
 
 vi.mock('../src/api', () => ({
-  fetchRequests: vi.fn()
+  fetchRequests: vi.fn(),
+  submitSupportTicket: vi.fn()
 }));
 
 const mockedFetchRequests = vi.mocked(fetchRequests);
+const mockedSubmitSupportTicket = vi.mocked(submitSupportTicket);
 
 describe('DashboardPage', () => {
   beforeEach(() => {
@@ -29,6 +31,7 @@ describe('DashboardPage', () => {
       }
     });
     mockedFetchRequests.mockReset();
+    mockedSubmitSupportTicket.mockReset();
     window.localStorage.setItem(
       'acq_auth_session',
       JSON.stringify({ email: 'buyer@example.com', role: 'CUSTOMER' })
@@ -159,5 +162,60 @@ describe('DashboardPage', () => {
         .getAllByRole('link', { name: 'legal-security@acquisition-concierge.example' })[0]
         ?.getAttribute('href')
     ).toBe('mailto:legal-security@acquisition-concierge.example');
+  });
+
+  it('submits dashboard support ticket with deterministic success copy', async () => {
+    mockedFetchRequests.mockResolvedValue({
+      requests: [
+        {
+          id: 77,
+          status: 'SOURCING',
+          userEmail: 'buyer@example.com',
+          budgetChf: 900,
+          sourcingFeeChf: 90,
+          category: 'ELECTRONICS',
+          country: 'CH',
+          condition: 'USED',
+          urgency: 'STANDARD',
+          createdAt: '2026-03-09T08:00:00.000Z',
+          feePaidAt: '2026-03-09T08:05:00.000Z',
+          proposal: null
+        }
+      ]
+    });
+    mockedSubmitSupportTicket.mockResolvedValue({
+      requestId: 77,
+      status: 'SOURCING',
+      severity: 'SEV-2',
+      source: 'CUSTOMER_DASHBOARD',
+      submittedAt: '2026-03-09T08:10:00.000Z'
+    });
+
+    const view = render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+    const scoped = within(view.container);
+
+    await waitFor(() => {
+      expect(scoped.getByRole('option', { name: '#77 (SOURCING)' })).toBeTruthy();
+    });
+
+    fireEvent.change(scoped.getByLabelText('Request'), { target: { value: '77' } });
+    fireEvent.change(scoped.getByLabelText('Severity'), { target: { value: 'SEV-2' } });
+    fireEvent.change(scoped.getByLabelText('Support message'), {
+      target: { value: 'Payment settled but timeline did not update for over one hour.' }
+    });
+    fireEvent.click(scoped.getByRole('button', { name: 'Submit support ticket' }));
+
+    await waitFor(() => {
+      expect(mockedSubmitSupportTicket).toHaveBeenCalledWith(77, {
+        severity: 'SEV-2',
+        source: 'CUSTOMER_DASHBOARD',
+        message: 'Payment settled but timeline did not update for over one hour.'
+      });
+    });
+    expect(scoped.getByText('Support ticket submitted for request #77 (SEV-2).')).toBeTruthy();
   });
 });
