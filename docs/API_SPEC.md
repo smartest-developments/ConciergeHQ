@@ -203,6 +203,7 @@ Admin audit trail behavior:
   - `STATUS_OVERRIDE`
   - `ROLE_CHANGE` (`roleChange.fromRole`, `roleChange.toRole`, `roleChange.targetUserId`)
   - `ACCOUNT_STATUS_CHANGE` (`accountStatusChange.disabled`, `accountStatusChange.targetUserId`)
+  - `SUPPORT_TICKET` (`supportTicket.severity`, `supportTicket.source`)
 
 ## POST /api/requests/:id/status
 Operator/admin transition endpoint for explicit manual status moves used by request detail triage actions.

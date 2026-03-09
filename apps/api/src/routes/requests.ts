@@ -72,7 +72,8 @@ type AuditActionType =
   | 'PROPOSAL_PUBLISHED'
   | 'STATUS_OVERRIDE'
   | 'ROLE_CHANGE'
-  | 'ACCOUNT_STATUS_CHANGE';
+  | 'ACCOUNT_STATUS_CHANGE'
+  | 'SUPPORT_TICKET';
 
 function resolveAuditActionType(
   toStatus: RequestStatus,
@@ -93,9 +94,19 @@ function resolveAuditActionType(
       ? (normalizedMetadata.accountStatusChange as Record<string, unknown>)
       : null;
   const hasAccountStatusChange = typeof accountStatusMetadata?.disabled === 'boolean';
+  const supportTicketMetadata =
+    normalizedMetadata?.supportTicket && typeof normalizedMetadata.supportTicket === 'object'
+      ? (normalizedMetadata.supportTicket as Record<string, unknown>)
+      : null;
+  const hasSupportTicket =
+    typeof supportTicketMetadata?.severity === 'string' && typeof supportTicketMetadata?.source === 'string';
 
   if (hasRoleChange) {
     return 'ROLE_CHANGE';
+  }
+
+  if (hasSupportTicket) {
+    return 'SUPPORT_TICKET';
   }
 
   if (hasAccountStatusChange) {
@@ -430,6 +441,17 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
                       : null
                 }
               : null;
+          const supportTicketMetadata =
+            metadata?.supportTicket && typeof metadata.supportTicket === 'object'
+              ? (metadata.supportTicket as Record<string, unknown>)
+              : null;
+          const supportTicket =
+            typeof supportTicketMetadata?.severity === 'string' && typeof supportTicketMetadata?.source === 'string'
+              ? {
+                  severity: supportTicketMetadata.severity,
+                  source: supportTicketMetadata.source
+                }
+              : null;
 
           return {
             id: event.id,
@@ -440,6 +462,7 @@ export async function registerRequestRoutes(app: FastifyInstance): Promise<void>
             proposalId,
             roleChange,
             accountStatusChange,
+            supportTicket,
             reason: event.reason,
             occurredAt: event.occurredAt
           };

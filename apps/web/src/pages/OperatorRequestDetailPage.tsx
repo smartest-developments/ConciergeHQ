@@ -69,7 +69,12 @@ function getProposalCountdownLabel(expiresAtIso: string, nowMs: number): string 
 }
 
 function getAuditActionLabel(
-  actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE' | 'ACCOUNT_STATUS_CHANGE'
+  actionType:
+    | 'PROPOSAL_PUBLISHED'
+    | 'STATUS_OVERRIDE'
+    | 'ROLE_CHANGE'
+    | 'ACCOUNT_STATUS_CHANGE'
+    | 'SUPPORT_TICKET'
 ): string {
   if (actionType === 'PROPOSAL_PUBLISHED') {
     return 'Proposal published';
@@ -79,6 +84,9 @@ function getAuditActionLabel(
   }
   if (actionType === 'ACCOUNT_STATUS_CHANGE') {
     return 'Account status changed';
+  }
+  if (actionType === 'SUPPORT_TICKET') {
+    return 'Support ticket submitted';
   }
 
   return 'Status override';
@@ -599,6 +607,9 @@ export function OperatorRequestDetailPage() {
                           ? ` (user #${event.accountStatusChange.targetUserId})`
                           : ''
                       }`
+                    : ''}
+                  {event.supportTicket
+                    ? ` - support: ${event.supportTicket.severity} via ${event.supportTicket.source}`
                     : ''}
                   {event.reason ? ` - ${event.reason}` : ''}
                 </li>

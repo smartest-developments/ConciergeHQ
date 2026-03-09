@@ -327,6 +327,20 @@ describe('GET /api/requests list filters', () => {
       ],
       statusEvents: [
         {
+          id: 5,
+          fromStatus: RequestStatus.SOURCING,
+          toStatus: RequestStatus.SOURCING,
+          reason: 'Customer escalated settlement issue via dashboard support ticket',
+          metadata: {
+            operatorRole: 'CUSTOMER',
+            supportTicket: {
+              severity: 'SEV-2',
+              source: 'DASHBOARD'
+            }
+          },
+          occurredAt: new Date('2026-03-05T08:55:00.000Z')
+        },
+        {
           id: 4,
           fromStatus: RequestStatus.SOURCING,
           toStatus: RequestStatus.SOURCING,
@@ -405,6 +419,15 @@ describe('GET /api/requests list filters', () => {
           })
         ]),
         adminAuditTrail: expect.arrayContaining([
+          expect.objectContaining({
+            id: 5,
+            actionType: 'SUPPORT_TICKET',
+            actorRole: 'CUSTOMER',
+            supportTicket: {
+              severity: 'SEV-2',
+              source: 'DASHBOARD'
+            }
+          }),
           expect.objectContaining({
             id: 4,
             actionType: 'ACCOUNT_STATUS_CHANGE',

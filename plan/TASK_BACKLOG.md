@@ -755,3 +755,15 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   status: TODO
   DoD: Run staging UAT and attach pass/fail evidence + release recommendation.
   Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
+
+## RUN_UPDATE_2026-03-09T09:05:00+0100
+- id: ACQ-REL-016
+  priority: P1
+  status: DONE
+  DoD: Extend request-detail admin audit trail parity to classify and render support-ticket escalation events with deterministic severity/source metadata (`SUPPORT_TICKET`) from request status-event metadata.
+  Evidence: `apps/api/src/routes/requests.ts`, `apps/api/tests/requests-list.test.ts`, `apps/web/src/api.ts`, `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/tests/operator-request-detail-page.test.tsx`, `docs/API_SPEC.md`
+- id: ACQ-REL-011B
+  priority: P1
+  status: TODO
+  DoD: Run staging UAT and attach pass/fail evidence + release recommendation.
+  Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`

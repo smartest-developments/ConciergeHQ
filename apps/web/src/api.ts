@@ -161,7 +161,12 @@ export async function fetchRequestDetail(requestId: number) {
     }>;
     adminAuditTrail?: Array<{
       id: number;
-      actionType: 'PROPOSAL_PUBLISHED' | 'STATUS_OVERRIDE' | 'ROLE_CHANGE' | 'ACCOUNT_STATUS_CHANGE';
+      actionType:
+        | 'PROPOSAL_PUBLISHED'
+        | 'STATUS_OVERRIDE'
+        | 'ROLE_CHANGE'
+        | 'ACCOUNT_STATUS_CHANGE'
+        | 'SUPPORT_TICKET';
       fromStatus: string | null;
       toStatus: string;
       actorRole: string | null;
@@ -174,6 +179,10 @@ export async function fetchRequestDetail(requestId: number) {
       accountStatusChange?: {
         disabled: boolean;
         targetUserId: number | null;
+      } | null;
+      supportTicket?: {
+        severity: string;
+        source: string;
       } | null;
       reason: string | null;
       occurredAt: string;

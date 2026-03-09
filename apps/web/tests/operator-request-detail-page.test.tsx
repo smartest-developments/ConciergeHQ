@@ -103,6 +103,20 @@ describe('OperatorRequestDetailPage', () => {
       ],
       adminAuditTrail: [
         {
+          id: 7,
+          actionType: 'SUPPORT_TICKET',
+          fromStatus: 'SOURCING',
+          toStatus: 'SOURCING',
+          actorRole: 'CUSTOMER',
+          proposalId: null,
+          supportTicket: {
+            severity: 'SEV-2',
+            source: 'DASHBOARD'
+          },
+          reason: 'Customer requested urgent follow-up after payment settlement.',
+          occurredAt: '2026-03-06T08:08:00.000Z'
+        },
+        {
           id: 6,
           actionType: 'ACCOUNT_STATUS_CHANGE',
           fromStatus: 'SOURCING',
@@ -164,6 +178,8 @@ describe('OperatorRequestDetailPage', () => {
     expect(screen.getByText(/role: OPERATOR -> ADMIN \(user #19\)/i)).toBeTruthy();
     expect(screen.getByText(/Account status changed/)).toBeTruthy();
     expect(screen.getByText(/account: DISABLED \(user #19\)/i)).toBeTruthy();
+    expect(screen.getByText(/Support ticket submitted/)).toBeTruthy();
+    expect(screen.getByText(/support: SEV-2 via DASHBOARD/i)).toBeTruthy();
     expect(screen.getByText(/Expired|Expires in/)).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Support routing hints' })).toBeTruthy();
     expect(
