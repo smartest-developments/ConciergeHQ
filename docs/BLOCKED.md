@@ -36,3 +36,5 @@ Run with write access to `/plan` so backlog/progress updates can be committed to
 - 2026-03-08T23:55:00+0100 - Cross-repo automation blocker: sandbox write permission denied for `/Users/simones/Developer/AllVision` and `/Users/simones/Developer/GlobalAgent` in this run context (`Operation not permitted` on write probes), preventing required backlog/code/doc updates in those repos.
 - 2026-03-09T00:41:20+0100 - Automation blocked: sandbox denied write access in this run context (`operation not permitted`), so backlog/code/docs updates could not be applied.
 - 2026-03-09T00:41:20+0100 - Partial blocker: write permission denied for tracked planning file `plan/TASK_BACKLOG.md`; docs/progress append succeeded but backlog state could not be reconciled in this run.
+
+- 2026-03-10T00:30:00+0100 - Automation blocker: local commit succeeded for `ACQ-AUTO-023`, but `git push` failed in this runner (`ssh: Could not resolve hostname github.com`). Quality gates could not run because Node tooling is unavailable (`npm: command not found`).
