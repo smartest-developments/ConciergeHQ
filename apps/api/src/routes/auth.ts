@@ -43,9 +43,16 @@ const adminRoleAssignmentSchema = z.object({
   reason: z.string().trim().min(3).max(500).optional()
 })
 
+const adminAccountStatusSchema = z.object({
+  disabled: z.boolean(),
+  requestId: z.coerce.number().int().positive().optional(),
+  reason: z.string().trim().min(3).max(500).optional()
+})
+
 const MAX_FAILED_LOGIN_ATTEMPTS = 5
 const LOGIN_LOCK_WINDOW_MINUTES = 15
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30
+const ACCOUNT_DISABLE_LOCK_UNTIL = new Date('2100-01-01T00:00:00.000Z')
 
 export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/register', async (req, reply) => {
@@ -504,6 +511,199 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         role: updatedUser.role
       },
       roleChanged: fromRole !== updatedUser.role,
+      auditEventRecorded
+    })
+  })
+
+  app.post('/api/admin/users/:userId/account-status', async (req, reply) => {
+    const sessionIdentity = await resolveSessionIdentity(app.prisma, req)
+    const roleResult = parseOperatorSessionRole(sessionIdentity?.role ?? null)
+    if (!roleResult.ok) {
+      reply.status(roleResult.statusCode).send({ error: roleResult.error })
+      return
+    }
+
+    if (roleResult.role !== 'ADMIN') {
+      reply.status(403).send({ error: 'OPERATOR_FORBIDDEN' })
+      return
+    }
+
+    const parsedParams = adminRoleAssignmentParamsSchema.safeParse(req.params)
+    if (!parsedParams.success) {
+      reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedParams.error.flatten()
+      })
+      return
+    }
+
+    const parsedBody = adminAccountStatusSchema.safeParse(req.body)
+    if (!parsedBody.success) {
+      reply.status(400).send({
+        error: 'VALIDATION_ERROR',
+        details: parsedBody.error.flatten()
+      })
+      return
+    }
+
+    if (parsedBody.data.disabled && sessionIdentity && parsedParams.data.userId === sessionIdentity.userId) {
+      reply.status(400).send({ error: 'CANNOT_DISABLE_SELF' })
+      return
+    }
+
+    const targetUser = await (
+      app.prisma as PrismaClient & {
+        user: {
+          findUnique: (args: {
+            where: { id: number }
+            select: { id: true; email: true; role: true }
+          }) => Promise<{ id: number; email: string; role: 'CUSTOMER' | 'OPERATOR' | 'ADMIN' } | null>
+        }
+      }
+    ).user.findUnique({
+      where: { id: parsedParams.data.userId },
+      select: { id: true, email: true, role: true }
+    })
+
+    if (!targetUser) {
+      reply.status(404).send({ error: 'USER_NOT_FOUND' })
+      return
+    }
+
+    const credential = await (
+      app.prisma as PrismaClient & {
+        userCredential: {
+          findUnique: (args: {
+            where: { userId: number }
+            select: { id: true; lockedUntil: true }
+          }) => Promise<{ id: number; lockedUntil: Date | null } | null>
+          update: (args: {
+            where: { id: number }
+            data: { failedAttemptCount?: number; lockedUntil: Date | null }
+          }) => Promise<{ id: number }>
+        }
+      }
+    ).userCredential.findUnique({
+      where: { userId: targetUser.id },
+      select: { id: true, lockedUntil: true }
+    })
+
+    if (!credential) {
+      reply.status(404).send({ error: 'USER_CREDENTIAL_NOT_FOUND' })
+      return
+    }
+
+    const shouldDisable = parsedBody.data.disabled
+    const isCurrentlyDisabled =
+      credential.lockedUntil !== null && credential.lockedUntil.getTime() >= ACCOUNT_DISABLE_LOCK_UNTIL.getTime()
+    const lockUntil = shouldDisable ? ACCOUNT_DISABLE_LOCK_UNTIL : null
+    const accountStatusChanged = shouldDisable !== isCurrentlyDisabled
+
+    if (accountStatusChanged) {
+      await (
+        app.prisma as PrismaClient & {
+          userCredential: {
+            update: (args: {
+              where: { id: number }
+              data: { failedAttemptCount: number; lockedUntil: Date | null }
+            }) => Promise<{ id: number }>
+          }
+        }
+      ).userCredential.update({
+        where: { id: credential.id },
+        data: {
+          failedAttemptCount: 0,
+          lockedUntil: lockUntil
+        }
+      })
+    }
+
+    let sessionsRevoked = false
+    if (shouldDisable) {
+      const sessionResult = await (
+        app.prisma as PrismaClient & {
+          session: {
+            updateMany: (args: {
+              where: { userId: number; revokedAt: null }
+              data: { revokedAt: Date }
+            }) => Promise<{ count: number }>
+          }
+        }
+      ).session.updateMany({
+        where: {
+          userId: targetUser.id,
+          revokedAt: null
+        },
+        data: {
+          revokedAt: new Date()
+        }
+      })
+      sessionsRevoked = sessionResult.count > 0
+    }
+
+    let auditEventRecorded = false
+    if (parsedBody.data.requestId) {
+      const request = await (
+        app.prisma as PrismaClient & {
+          sourcingRequest: {
+            findUnique: (args: {
+              where: { id: number }
+              select: { id: true; status: true }
+            }) => Promise<{ id: number; status: string } | null>
+          }
+        }
+      ).sourcingRequest.findUnique({
+        where: { id: parsedBody.data.requestId },
+        select: { id: true, status: true }
+      })
+
+      if (!request) {
+        reply.status(404).send({ error: 'REQUEST_NOT_FOUND' })
+        return
+      }
+
+      await (
+        app.prisma as PrismaClient & {
+          requestStatusEvent: {
+            create: (args: {
+              data: {
+                requestId: number
+                fromStatus: string
+                toStatus: string
+                reason: string
+                metadata: Record<string, unknown>
+              }
+            }) => Promise<{ id: number }>
+          }
+        }
+      ).requestStatusEvent.create({
+        data: {
+          requestId: request.id,
+          fromStatus: request.status,
+          toStatus: request.status,
+          reason: parsedBody.data.reason ?? (shouldDisable ? 'Admin account disable recorded' : 'Admin account enable recorded'),
+          metadata: {
+            operatorRole: roleResult.role,
+            accountStatusChange: {
+              disabled: shouldDisable,
+              targetUserId: targetUser.id
+            }
+          }
+        }
+      })
+
+      auditEventRecorded = true
+    }
+
+    reply.status(200).send({
+      user: {
+        id: targetUser.id,
+        email: targetUser.email,
+        role: targetUser.role
+      },
+      accountDisabled: shouldDisable,
+      accountStatusChanged,
+      sessionsRevoked,
       auditEventRecorded
     })
   })

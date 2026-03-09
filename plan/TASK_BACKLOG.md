@@ -276,7 +276,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
 - id: ACQ-ADMIN-004
   priority: P2
   status: IN_PROGRESS
-  DoD: Add admin user-management capabilities (role assignment + account disable/enable) with safety checks via incremental slices `ACQ-ADMIN-004A..B`.
+  DoD: Add admin user-management capabilities (role assignment + account disable/enable) with safety checks via incremental slices `ACQ-ADMIN-004A..D`.
   Evidence: `apps/api/src/routes`, `apps/web/src/pages`, `docs/SECURITY.md`
 - id: ACQ-ADMIN-004A
   priority: P2
@@ -290,7 +290,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `apps/web/src/pages/OperatorRequestDetailPage.tsx`, `apps/web/src/api.ts`, `apps/web/tests/operator-request-detail-page.test.tsx`, `apps/api/src/routes/requests.ts`, `docs/API_SPEC.md`
 - id: ACQ-ADMIN-004C
   priority: P2
-  status: TODO
+  status: DONE
   DoD: Add admin account disable/enable backend mutation with immutable audit events and role-change guardrails.
   Evidence: `apps/api/src/routes/auth.ts`, `apps/api/tests/auth-routes.test.ts`, `docs/API_SPEC.md`, `docs/SECURITY.md`
 - id: ACQ-ADMIN-004D
@@ -448,7 +448,7 @@ Backlog policy: keep `ACTIVE_TASKS` self-maintaining with automated gap discover
   Evidence: `docs/UAT_REPORT.md`, `plan/PROGRESS_LOG.md`
 - id: ACQ-REL-012
   priority: P2
-  status: TODO
+  status: DONE
   DoD: Add customer support/admin operational baseline (contact path, SLA targets, dispute/escalation handling playbook).
   Evidence: `docs/OPERATIONS.md`
 

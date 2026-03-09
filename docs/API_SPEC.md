@@ -440,6 +440,46 @@ Behavior:
 - Role update is idempotent (`roleChanged=false` when target already has requested role).
 - When `requestId` is provided, server appends a request status event with `metadata.roleChange` (`fromRole`, `toRole`, `targetUserId`) so admin audit trail consumers can render role-change evidence.
 
+## POST /api/admin/users/:userId/account-status
+Admin-only account disable/enable mutation contract for credential lock controls and immutable audit evidence.
+
+Example request:
+```json
+{
+  "disabled": true,
+  "requestId": 42,
+  "reason": "Risk hold applied by compliance"
+}
+```
+
+Responses:
+- `200` with:
+```json
+{
+  "user": {
+    "id": 31,
+    "email": "target@example.com",
+    "role": "CUSTOMER"
+  },
+  "accountDisabled": true,
+  "accountStatusChanged": true,
+  "sessionsRevoked": true,
+  "auditEventRecorded": true
+}
+```
+- `400` with `{ "error": "VALIDATION_ERROR", "details": ... }` when params/body are invalid.
+- `400` with `{ "error": "CANNOT_DISABLE_SELF" }` when admin attempts to disable their own account.
+- `401` with `{ "error": "AUTH_REQUIRED" }` when session is missing/invalid.
+- `403` with `{ "error": "OPERATOR_FORBIDDEN" }` when authenticated session is not `ADMIN`.
+- `404` with `{ "error": "USER_NOT_FOUND" }` when target user id is unknown.
+- `404` with `{ "error": "USER_CREDENTIAL_NOT_FOUND" }` when target user has no credential record.
+- `404` with `{ "error": "REQUEST_NOT_FOUND" }` when `requestId` is provided but request is unknown.
+
+Behavior:
+- Disabling sets a long-lived credential lock and revokes active sessions for target user.
+- Enabling clears the credential lock and resets failed-attempt counters.
+- When `requestId` is provided, server appends request status event metadata (`accountStatusChange.disabled`, `accountStatusChange.targetUserId`) for admin audit-trail parity.
+
 ## POST /api/auth/forgot-password
 Request password recovery for an account.
 

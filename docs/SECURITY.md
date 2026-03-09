@@ -49,6 +49,7 @@
 - `POST /api/auth/register` now hashes password with salted scrypt and immediately issues an HTTP-only `acq_session` cookie.
 - `POST /api/auth/login` now enforces deterministic brute-force lockout (5 failed attempts -> 15 minute lock, `429 AUTH_LOCKED` + `Retry-After`).
 - `POST /api/admin/users/:userId/role` now enforces `ADMIN` session auth and supports request-linked `metadata.roleChange` audit persistence for traceable role-management actions.
+- `POST /api/admin/users/:userId/account-status` now enforces `ADMIN` session auth, blocks self-disable, revokes active sessions on disable, and can persist request-linked `metadata.accountStatusChange` audit evidence.
 - Successful login resets failed-attempt counters and creates a fresh server-side session row.
 
 ## 2026-03-06 Password Recovery Increment (ACQ-AUTH-003)

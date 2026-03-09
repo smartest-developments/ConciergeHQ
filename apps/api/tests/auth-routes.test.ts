@@ -24,7 +24,8 @@ const makePrismaMock = () =>
     },
     userCredential: {
       create: vi.fn(),
-      update: vi.fn()
+      update: vi.fn(),
+      findUnique: vi.fn()
     },
     passwordResetToken: {
       updateMany: vi.fn(),
@@ -493,6 +494,126 @@ describe('auth routes', () => {
           roleChange: {
             fromRole: 'CUSTOMER',
             toRole: 'OPERATOR',
+            targetUserId: 31
+          }
+        })
+      })
+    })
+    await app.close()
+  })
+
+  it('requires admin session for account status endpoint', async () => {
+    const prisma = makePrismaMock()
+    prisma.session.findUnique.mockResolvedValue({
+      id: 1,
+      revokedAt: null,
+      expiresAt: new Date('2030-03-08T00:00:00.000Z'),
+      user: {
+        id: 17,
+        email: 'operator@example.com',
+        role: 'OPERATOR'
+      }
+    })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/users/22/account-status',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=session-token-admin`
+      },
+      payload: {
+        disabled: true
+      }
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toEqual({ error: 'OPERATOR_FORBIDDEN' })
+    expect(prisma.userCredential.update).not.toHaveBeenCalled()
+    await app.close()
+  })
+
+  it('disables user account, revokes sessions, and persists request-linked audit metadata', async () => {
+    const prisma = makePrismaMock()
+    prisma.session.findUnique.mockResolvedValue({
+      id: 2,
+      revokedAt: null,
+      expiresAt: new Date('2030-03-08T00:00:00.000Z'),
+      user: {
+        id: 9,
+        email: 'admin@example.com',
+        role: 'ADMIN'
+      }
+    })
+    prisma.user.findUnique.mockResolvedValue({
+      id: 31,
+      email: 'target@example.com',
+      role: 'CUSTOMER'
+    })
+    prisma.userCredential.findUnique.mockResolvedValue({
+      id: 631,
+      lockedUntil: null
+    })
+    prisma.userCredential.update.mockResolvedValue({ id: 631 })
+    prisma.session.updateMany.mockResolvedValue({ count: 2 })
+    prisma.sourcingRequest.findUnique.mockResolvedValue({
+      id: 88,
+      status: 'SOURCING'
+    })
+    prisma.requestStatusEvent.create.mockResolvedValue({ id: 992 })
+    const app = createServer(prisma as never)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/users/31/account-status',
+      headers: {
+        cookie: `${AUTH_SESSION_COOKIE_NAME}=session-token-admin`
+      },
+      payload: {
+        disabled: true,
+        requestId: 88,
+        reason: 'Risk hold applied by compliance'
+      }
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      user: {
+        id: 31,
+        email: 'target@example.com',
+        role: 'CUSTOMER'
+      },
+      accountDisabled: true,
+      accountStatusChanged: true,
+      sessionsRevoked: true,
+      auditEventRecorded: true
+    })
+    expect(prisma.userCredential.update).toHaveBeenCalledWith({
+      where: { id: 631 },
+      data: {
+        failedAttemptCount: 0,
+        lockedUntil: new Date('2100-01-01T00:00:00.000Z')
+      }
+    })
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 31,
+        revokedAt: null
+      },
+      data: {
+        revokedAt: expect.any(Date)
+      }
+    })
+    expect(prisma.requestStatusEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        requestId: 88,
+        fromStatus: 'SOURCING',
+        toStatus: 'SOURCING',
+        reason: 'Risk hold applied by compliance',
+        metadata: expect.objectContaining({
+          operatorRole: 'ADMIN',
+          accountStatusChange: {
+            disabled: true,
             targetUserId: 31
           }
         })
